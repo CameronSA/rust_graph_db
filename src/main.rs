@@ -5,10 +5,15 @@ mod vertex;
 
 use std::io::{stdin, stdout, Write};
 
-use crate::{executor::Executor, parser::Parser};
+use crate::{
+    executor::Executor,
+    graph::{GraphFactory, GraphType},
+    parser::Parser,
+};
 
 fn main() {
     println!("Rust Graph DB Started");
+    let mut executor = Executor::new(GraphFactory::new(), GraphType::InMemory);
 
     loop {
         print!("\nrustgdb> ");
@@ -25,7 +30,7 @@ fn main() {
                 continue;
             }
         };
-
-        Executor::execute(command);
+        
+        executor.execute(command);
     }
 }

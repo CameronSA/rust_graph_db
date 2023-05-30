@@ -1,7 +1,7 @@
 use crate::vertex::Vertex;
 
 #[derive(Debug)]
-enum GraphType {
+pub enum GraphType {
     InMemory,
     InFile,
 }
@@ -45,17 +45,23 @@ pub struct GraphFactory {
 }
 
 impl GraphFactory {
-    fn new() -> GraphFactory {
+    pub fn new() -> GraphFactory {
         GraphFactory { graphs: vec![] }
     }
 
-    fn create_graph(
+    pub fn create_graph(
         &mut self,
         graph_name: String,
         graph_type: &GraphType,
     ) -> Result<usize, String> {
         if graph_name.trim().is_empty() {
             return Err(format!("Must provide a graph name"));
+        }
+
+        for graph in &self.graphs {
+            if graph.name() == graph_name {
+                return Err(format!("Graph with name '{}' already exists", graph.name()));
+            }
         }
 
         match graph_type {
