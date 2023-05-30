@@ -1,5 +1,4 @@
-mod vertex;
-use vertex::Vertex;
+use crate::vertex::Vertex;
 
 #[derive(Debug)]
 enum GraphType {
