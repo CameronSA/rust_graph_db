@@ -7,7 +7,11 @@ enum GraphType {
     InFile,
 }
 
-trait Graph {
+pub trait Graph {
+    fn name(&self) -> &str;
+
+    fn vertices(&self) -> &Vec<Vertex>;
+
     fn add_vertex(&mut self, vertex: Vertex) -> usize;
 
     fn list_vertices(&self) -> &Vec<Vertex>;
@@ -27,10 +31,18 @@ impl Graph for InMemoryGraph {
     fn list_vertices(&self) -> &Vec<Vertex> {
         &self.vertices
     }
+
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn vertices(&self) -> &Vec<Vertex> {
+        &self.vertices
+    }
 }
 
-struct GraphFactory {
-    graphs: Vec<Box<dyn Graph>>,
+pub struct GraphFactory {
+    pub graphs: Vec<Box<dyn Graph>>,
 }
 
 impl GraphFactory {
@@ -60,6 +72,22 @@ impl GraphFactory {
                 let msg = format!("Unexpected graph type: {:?}", graph_type);
                 Err(msg)
             }
+        }
+    }
+
+    fn get_graph(&self, command: &str) -> Result<&Box<dyn Graph>, String> 
+    {
+        let mut graph_ref: Option<&Box<dyn Graph>> = None;
+        for graph in &self.graphs {
+            if (*graph).name() == command{
+                graph_ref = Some(&graph);
+                break;
+            }
+        }
+
+        match graph_ref {
+            Some(graph) => Ok(graph),
+            None => Err(format!("Unknown graph: {}", command))
         }
     }
 }

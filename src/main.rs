@@ -1,4 +1,5 @@
 mod graph;
+mod parser;
 
 use std::io::{stdin, stdout, Write};
 
