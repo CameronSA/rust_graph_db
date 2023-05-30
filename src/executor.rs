@@ -5,6 +5,7 @@ use crate::graph::{GraphFactory, GraphType};
 #[derive(Debug)]
 pub enum CommandType {
     CreateGraph(String),
+    ListGraphs(), 
     ListVertices,
     GetVertex(usize),
     AddVertex,
@@ -33,17 +34,15 @@ impl Executor {
         println!("Executing: {:?}", command);
 
         let result = match command.command_type {
-            CommandType::CreateGraph(name) => self.create_graph(name),
+            CommandType::CreateGraph(graph_name) => self.graph_factory.create_graph(graph_name, &self.graph_type),
+
+            CommandType::ListGraphs() => self.graph_factory.list_graphs(),
             _ => todo!(),
         };
         
         match result {
-            Ok(result) => println!("{}", result),
+            Ok(result) => println!("{:?}", result),
             Err(err) => println!("{}", err)
         }
-    }
-
-    fn create_graph(&mut self, graph_name: String) -> Result<usize, String> {
-        self.graph_factory.create_graph(graph_name, &self.graph_type)
     }
 }

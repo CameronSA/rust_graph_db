@@ -19,6 +19,8 @@ impl Parser {
             };
 
             command_type = Some(Ok(CommandType::CreateGraph(graph_name)));
+        } else if command == "listGraphs()" {
+            command_type = Some(Ok(CommandType::ListGraphs()));
         }
 
         // Function determination
@@ -29,6 +31,11 @@ impl Parser {
 
         match command_type {
             Ok(command_type) => match command_type {
+                CommandType::ListGraphs() => Ok(Command {
+                    command_type: CommandType::ListGraphs(),
+                    command_json: None,
+                }),
+
                 CommandType::CreateGraph(name) => Ok(Command {
                     command_type: CommandType::CreateGraph(name),
                     command_json: None,
