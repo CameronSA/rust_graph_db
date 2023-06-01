@@ -3,7 +3,6 @@ use crate::vertex::Vertex;
 #[derive(Debug)]
 pub enum GraphType {
     InMemory,
-    InFile,
 }
 
 #[derive(Debug)]
@@ -91,10 +90,6 @@ impl GraphFactory {
                 });
                 self.graphs.push(graph);
                 Ok(DataResult::CreateGraph(self.graphs.len() - 1))
-            }
-            _ => {
-                let msg = format!("Unexpected graph type: {:?}", graph_type);
-                Err(msg)
             }
         }
     }
