@@ -3,14 +3,8 @@ use json::JsonValue as Json;
 use crate::{
     graph::{DataResult, Graph, GraphFactory, GraphType},
     parser::JsonProperty,
-    vertex::Vertex,
+    vertex::{Vertex, VertexProperty},
 };
-
-#[derive(Debug)]
-pub struct VertexProperty {
-    name: String,
-    value: String,
-}
 
 #[derive(Debug)]
 pub enum VertexMutationCommandType {
@@ -77,6 +71,10 @@ impl Executor {
     }
 
     fn create_vertex(mutate_command: &Vec<VertexMutationCommandType>) -> Result<Vertex, String> {
+        for command in mutate_command {
+            
+        }
+
         todo!()
     }
 

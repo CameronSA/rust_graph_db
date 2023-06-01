@@ -1,4 +1,10 @@
 #[derive(Debug)]
-pub struct Vertex {
+pub struct VertexProperty {
+    name: String,
+    value: String,
+}
 
+#[derive(Debug)]
+pub struct Vertex {
+    properties: Vec<VertexProperty>,
 }
