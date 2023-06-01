@@ -31,6 +31,11 @@ fn main() {
             }
         };
         
-        executor.execute(command);
+        let result = executor.execute(command);
+
+        match result {
+            Ok(result) => println!("{:?}", result),
+            Err(err) => println!("{}", err)
+        }
     }
 }

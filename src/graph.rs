@@ -6,14 +6,25 @@ pub enum GraphType {
     InFile,
 }
 
+#[derive(Debug)]
+pub enum DataResult<'a> {
+    CreateGraph(usize),
+    ListGraphs(Vec<String>),
+    ListVertices(&'a Vec<Vertex>),
+    GetVertex(&'a Vertex),
+    AddVertex(usize),
+}
+
 pub trait Graph {
     fn name(&self) -> &str;
 
     fn vertices(&self) -> &Vec<Vertex>;
 
-    fn add_vertex(&mut self, vertex: Vertex) -> usize;
+    fn add_vertex(&mut self, vertex: Vertex) -> Result<DataResult, String>;
 
-    fn list_vertices(&self) -> &Vec<Vertex>;
+    fn get_vertex(&self, id: usize) -> Result<DataResult, String>;
+
+    fn list_vertices(&self) -> Result<DataResult, String>;
 }
 
 struct InMemoryGraph {
@@ -22,13 +33,21 @@ struct InMemoryGraph {
 }
 
 impl Graph for InMemoryGraph {
-    fn add_vertex(&mut self, vertex: Vertex) -> usize {
+    fn add_vertex(&mut self, vertex: Vertex) -> Result<DataResult, String> {
         self.vertices.push(vertex);
-        self.vertices.len() - 1
+        Ok(DataResult::AddVertex(self.vertices.len() - 1))
     }
 
-    fn list_vertices(&self) -> &Vec<Vertex> {
-        &self.vertices
+    fn list_vertices(&self) -> Result<DataResult, String> {
+        Ok(DataResult::ListVertices(&self.vertices))
+    }
+
+    fn get_vertex(&self, id: usize) -> Result<DataResult, String> {
+        if self.vertices.len() - 1 < id {
+            Err(format!("Vertex ID: {} does not exist", id))
+        } else {
+            Ok(DataResult::GetVertex(&self.vertices[id]))
+        }
     }
 
     fn name(&self) -> &str {
@@ -38,12 +57,6 @@ impl Graph for InMemoryGraph {
     fn vertices(&self) -> &Vec<Vertex> {
         &self.vertices
     }
-}
-
-#[derive(Debug)]
-pub enum DataResult {
-    CreateGraph(usize),
-    ListGraphs(Vec<String>),
 }
 
 pub struct GraphFactory {
@@ -85,8 +98,8 @@ impl GraphFactory {
             }
         }
     }
-    
-    pub fn list_graphs(&self) -> Result<DataResult, String>{
+
+    pub fn list_graphs(&self) -> Result<DataResult, String> {
         let mut graphs = vec![];
         for graph in &self.graphs {
             graphs.push(graph.name().to_string());
@@ -95,19 +108,18 @@ impl GraphFactory {
         Ok(DataResult::ListGraphs(graphs))
     }
 
-    fn get_graph(&self, graph_name: &str) -> Result<&Box<dyn Graph>, String> 
-    {
-        let mut graph_ref: Option<&Box<dyn Graph>> = None;
-        for graph in &self.graphs {
-            if (*graph).name() == graph_name{
-                graph_ref = Some(&graph);
+    pub fn get_graph(&mut self, graph_name: &str) -> Result<&mut Box<dyn Graph>, String> {
+        let mut graph_ref: Option<&mut Box<dyn Graph>> = None;
+        for graph in &mut self.graphs {
+            if (*graph).name() == graph_name {
+                graph_ref = Some(graph);
                 break;
             }
         }
 
         match graph_ref {
             Some(graph) => Ok(graph),
-            None => Err(format!("Unknown graph: {}", graph_name))
+            None => Err(format!("Unknown graph: {}", graph_name)),
         }
     }
 }

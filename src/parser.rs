@@ -1,26 +1,31 @@
 use crate::executor::{Command, CommandType};
 use json::object as JsonObject;
 
+pub enum JsonProperty {
+    GraphName,
+}
+
+impl JsonProperty {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            JsonProperty::GraphName => "graph_name",
+        }
+    }
+}
+
 pub struct Parser;
 impl Parser {
     pub fn parse(command: String) -> Result<Command, String> {
-        // let obj = JsonObject!{
-        // test:true
-        // };
-
         let command_components: Vec<&str> = command.split(".").collect();
 
-        // Graph creation
+        // Graph commands
         let mut command_type = None;
         if command.starts_with("createGraph(") && command.ends_with(")") {
-            let graph_name = match Self::extract_graph_name(&command_components[0]) {
-                Ok(name) => name,
-                Err(err) => return Err(err),
-            };
+            let graph_name = Self::extract_graph_name(&command_components[0])?;
 
             command_type = Some(Ok(CommandType::CreateGraph(graph_name)));
         } else if command == "listGraphs()" {
-            command_type = Some(Ok(CommandType::ListGraphs()));
+            command_type = Some(Ok(CommandType::ListGraphs));
         }
 
         // Function determination
@@ -31,8 +36,8 @@ impl Parser {
 
         match command_type {
             Ok(command_type) => match command_type {
-                CommandType::ListGraphs() => Ok(Command {
-                    command_type: CommandType::ListGraphs(),
+                CommandType::ListGraphs => Ok(Command {
+                    command_type: CommandType::ListGraphs,
                     command_json: None,
                 }),
 
@@ -61,6 +66,11 @@ impl Parser {
                         graph_name: Self::identify_graph(&command_components)
                     }),
                 }),
+
+                CommandType::Help => Ok(Command {
+                    command_type: CommandType::Help,
+                    command_json: None,
+                }),
             },
             Err(err) => Err(err),
         }
@@ -79,10 +89,7 @@ impl Parser {
         match command {
             // Graph creation
             _ if command.starts_with("createGraph(") && command.ends_with(")") => {
-                let graph_name = match Self::extract_graph_name(command) {
-                    Ok(name) => name,
-                    Err(err) => return Err(err),
-                };
+                let graph_name = Self::extract_graph_name(command)?;
 
                 Ok(CommandType::CreateGraph(graph_name))
             }
@@ -122,10 +129,9 @@ impl Parser {
             .replace(")", "");
         let name = binding.trim();
 
-        if name.is_empty() {
-            return Err(format!("Must provide a graph name"));
-        } else {
-            return Ok(name.to_string());
+        match name.is_empty() {
+            true => Err(format!("Must provide a graph name")),
+            false => Ok(name.to_string()),
         }
     }
 }
