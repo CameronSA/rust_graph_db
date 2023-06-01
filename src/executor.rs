@@ -7,12 +7,23 @@ use crate::{
 };
 
 #[derive(Debug)]
+pub struct VertexProperty {
+    name: String,
+    value: String,
+}
+
+#[derive(Debug)]
+pub enum VertexMutationCommandType {
+    Property(VertexProperty),
+}
+
+#[derive(Debug)]
 pub enum CommandType {
     CreateGraph(String),
     ListGraphs,
     ListVertices,
     GetVertex(usize),
-    AddVertex,
+    AddVertex(Vec<VertexMutationCommandType>),
     Help,
 }
 
@@ -38,50 +49,52 @@ impl Executor {
     pub fn execute(&mut self, command: Command) -> Result<DataResult, String> {
         println!("Executing: {:?}", command);
 
-        match command.command_type {
+        match &command.command_type {
             CommandType::CreateGraph(graph_name) => self
                 .graph_factory
-                .create_graph(graph_name, &self.graph_type),
+                .create_graph(graph_name.to_owned(), &self.graph_type),
 
             CommandType::ListGraphs => self.graph_factory.list_graphs(),
 
             CommandType::ListVertices => {
-                let graph = self.get_graph(command)?;
+                let graph = self.get_graph(&command)?;
                 graph.list_vertices()
             }
 
             CommandType::GetVertex(id) => {
-                let graph = self.get_graph(command)?;
-                graph.get_vertex(id)
+                let graph = self.get_graph(&command)?;
+                graph.get_vertex(*id)
             }
 
-            CommandType::AddVertex => {
-                let graph = self.get_mut_graph(command)?;
-                let vertex = Vertex {};
+            CommandType::AddVertex(mutate_command) => {
+                let graph = self.get_mut_graph(&command)?;
+                let vertex = Self::create_vertex(&mutate_command)?;
                 graph.add_vertex(vertex)
             }
 
-            CommandType::Help => {
-                Err(Self::help())
-            }
+            CommandType::Help => Err(Self::help()),
         }
     }
 
-    fn get_mut_graph(&mut self, command: Command) -> Result<&mut Box<dyn Graph>, String> {
+    fn create_vertex(mutate_command: &Vec<VertexMutationCommandType>) -> Result<Vertex, String> {
+        todo!()
+    }
+
+    fn get_mut_graph(&mut self, command: &Command) -> Result<&mut Box<dyn Graph>, String> {
         let graph_name = self.get_graph_name(command)?;
 
         self.graph_factory.get_graph(&graph_name)
     }
 
-    fn get_graph(&mut self, command: Command) -> Result<&Box<dyn Graph>, String> {
+    fn get_graph(&mut self, command: &Command) -> Result<&Box<dyn Graph>, String> {
         let graph = self.get_mut_graph(command)?;
         Ok(&*graph)
     }
 
-    fn get_graph_name(&self, command: Command) -> Result<String, String> {
+    fn get_graph_name(&self, command: &Command) -> Result<String, String> {
         let msg = "Graph not specified".to_string();
 
-        match command.command_json {
+        match &command.command_json {
             Some(json) => {
                 let name = json[JsonProperty::GraphName.as_str()].clone();
                 match name.is_null() {
@@ -112,6 +125,7 @@ impl Executor {
 
             .addV(): adds a vertex to the given graph
 
-        "#.to_string()
+        "#
+        .to_string()
     }
 }

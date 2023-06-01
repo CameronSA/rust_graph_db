@@ -62,8 +62,8 @@ impl Parser {
                     }),
                 }),
 
-                CommandType::AddVertex => Ok(Command {
-                    command_type: CommandType::AddVertex,
+                CommandType::AddVertex(mutation_command) => Ok(Command {
+                    command_type: CommandType::AddVertex(mutation_command),
                     command_json: Some(JsonObject! {
                         graph_name: Self::identify_graph(&command_components)
                     }),
@@ -100,7 +100,7 @@ impl Parser {
             }
 
             // Vertex addition
-            "addV()" => Ok(CommandType::AddVertex),
+            "addV()" => Ok(CommandType::AddVertex(Vec::new())),
 
             // Catch all
             _ => Err(format!("Unrecognized command: {}", command)),
