@@ -13,6 +13,7 @@ use crate::{
 
 fn main() {
     println!("Rust Graph DB Started");
+    print!("{}", Executor::help());
     let mut executor = Executor::new(GraphFactory::new(), GraphType::InMemory);
 
     loop {

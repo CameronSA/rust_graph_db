@@ -61,7 +61,9 @@ impl Executor {
                 graph.add_vertex(vertex)
             }
 
-            _ => todo!(),
+            CommandType::Help => {
+                Err(Self::help())
+            }
         }
     }
 
@@ -89,5 +91,27 @@ impl Executor {
             }
             None => return Err(msg),
         }
+    }
+
+    pub fn help() -> String {
+        r#"
+        
+        Standalone Commands
+
+            help: prints this page
+
+            createGraph(<graph name>): creates a graph with the given name
+
+            listGraphs(): lists all graphs
+
+        Graph Commands (preceded with a graph name. E.g. graph.V()):
+
+            .V(): lists vertices in the given graph
+            
+            .V(<id>): gets a vertex in the given graph
+
+            .addV(): adds a vertex to the given graph
+
+        "#.to_string()
     }
 }

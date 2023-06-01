@@ -26,6 +26,8 @@ impl Parser {
             command_type = Some(Ok(CommandType::CreateGraph(graph_name)));
         } else if command == "listGraphs()" {
             command_type = Some(Ok(CommandType::ListGraphs));
+        } else if command.to_lowercase() == "help" {
+            command_type = Some(Ok(CommandType::Help));
         }
 
         // Function determination
@@ -87,13 +89,6 @@ impl Parser {
 
         let command = command_components[1].trim();
         match command {
-            // Graph creation
-            _ if command.starts_with("createGraph(") && command.ends_with(")") => {
-                let graph_name = Self::extract_graph_name(command)?;
-
-                Ok(CommandType::CreateGraph(graph_name))
-            }
-
             // Vertex selection
             "V()" => Ok(CommandType::ListVertices),
             _ if command.starts_with("V(") && command.ends_with(")") => {
