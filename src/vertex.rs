@@ -1,10 +1,20 @@
+#[derive(Debug, Clone)]
+pub enum VertexPropertyValue {
+    Int32(i32),
+    Int64(i64),
+    Float32(f32),
+    Float64(f64),
+    String(String),
+    DateTime(i64), // milliseconds since January 1, 1970
+}
+
 #[derive(Debug)]
 pub struct VertexProperty {
-    name: String,
-    value: String,
+    pub name: String,
+    pub value: VertexPropertyValue,
 }
 
 #[derive(Debug)]
 pub struct Vertex {
-    properties: Vec<VertexProperty>,
+    pub properties: Vec<VertexProperty>,
 }

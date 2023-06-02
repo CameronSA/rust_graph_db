@@ -71,11 +71,19 @@ impl Executor {
     }
 
     fn create_vertex(mutate_command: &Vec<VertexMutationCommandType>) -> Result<Vertex, String> {
+        let mut properties = Vec::new();
         for command in mutate_command {
-            
+            match command {
+                VertexMutationCommandType::Property(property) => {
+                    properties.push(VertexProperty {
+                        name: property.name.clone(),
+                        value: property.value.clone(),
+                    });
+                }
+            }
         }
 
-        todo!()
+        Ok(Vertex { properties })
     }
 
     fn get_mut_graph(&mut self, command: &Command) -> Result<&mut Box<dyn Graph>, String> {
