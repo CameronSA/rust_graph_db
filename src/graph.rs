@@ -1,4 +1,4 @@
-use crate::vertex::Vertex;
+use crate::{vertex::Vertex, executor::VertexFilterCommandType};
 
 #[derive(Debug)]
 pub enum GraphType {
@@ -25,7 +25,7 @@ pub trait Graph {
 
     fn get_mutable_vertex(&mut self, id: usize) -> Result<DataResult, String>;
 
-    fn list_vertices(&self) -> Result<DataResult, String>;
+    fn list_vertices(&self, filters: &Vec<VertexFilterCommandType>) -> Result<DataResult, String>;
 }
 
 struct InMemoryGraph {
@@ -39,8 +39,9 @@ impl Graph for InMemoryGraph {
         Ok(DataResult::UnsignedInt(self.vertices.len() - 1))
     }
 
-    fn list_vertices(&self) -> Result<DataResult, String> {
-        Ok(DataResult::VertexVectorRef(&self.vertices))
+    fn list_vertices(&self, filters: &Vec<VertexFilterCommandType>) -> Result<DataResult, String> {
+        //Ok(DataResult::VertexVectorRef(&self.vertices))
+        todo!()
     }
 
     fn get_vertex(&self, id: usize) -> Result<DataResult, String> {

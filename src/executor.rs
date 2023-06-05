@@ -12,7 +12,11 @@ pub enum VertexMutationCommandType {
 }
 
 #[derive(Debug)]
-pub enum VertexFilterCommandType {}
+pub enum VertexFilterCommandType {
+    HasName(String),
+    HasProperty(String, String), // name, value pair
+    HasPropertyLike(String, String), // name, search term pair
+}
 
 #[derive(Debug)]
 pub enum CommandType {
@@ -56,7 +60,7 @@ impl Executor {
 
             CommandType::ListVertices(filter_command) => {
                 let graph = self.get_graph(&command)?;
-                graph.list_vertices()
+                graph.list_vertices(filter_command)
             }
 
             CommandType::GetVertex(id) => {
