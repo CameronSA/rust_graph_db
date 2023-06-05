@@ -7,11 +7,10 @@ pub enum GraphType {
 
 #[derive(Debug)]
 pub enum DataResult<'a> {
-    CreateGraph(usize),
-    ListGraphs(Vec<String>),
-    ListVertices(&'a Vec<Vertex>),
-    GetVertex(&'a Vertex),
-    AddVertex(usize),
+    UnsignedInt(usize),
+    StringVector(Vec<&'a str>),
+    VertexVectorRef(&'a Vec<Vertex>),
+    VertexRef(&'a Vertex),
 }
 
 pub trait Graph {
@@ -34,18 +33,18 @@ struct InMemoryGraph {
 impl Graph for InMemoryGraph {
     fn add_vertex(&mut self, vertex: Vertex) -> Result<DataResult, String> {
         self.vertices.push(vertex);
-        Ok(DataResult::AddVertex(self.vertices.len() - 1))
+        Ok(DataResult::UnsignedInt(self.vertices.len() - 1))
     }
 
     fn list_vertices(&self) -> Result<DataResult, String> {
-        Ok(DataResult::ListVertices(&self.vertices))
+        Ok(DataResult::VertexVectorRef(&self.vertices))
     }
 
     fn get_vertex(&self, id: usize) -> Result<DataResult, String> {
         if self.vertices.len() - 1 < id {
             Err(format!("Vertex ID: {} does not exist", id))
         } else {
-            Ok(DataResult::GetVertex(&self.vertices[id]))
+            Ok(DataResult::VertexRef(&self.vertices[id]))
         }
     }
 
@@ -89,7 +88,7 @@ impl GraphFactory {
                     vertices: vec![],
                 });
                 self.graphs.push(graph);
-                Ok(DataResult::CreateGraph(self.graphs.len() - 1))
+                Ok(DataResult::UnsignedInt(self.graphs.len() - 1))
             }
         }
     }
@@ -97,10 +96,10 @@ impl GraphFactory {
     pub fn list_graphs(&self) -> Result<DataResult, String> {
         let mut graphs = vec![];
         for graph in &self.graphs {
-            graphs.push(graph.name().to_string());
+            graphs.push(graph.name());
         }
 
-        Ok(DataResult::ListGraphs(graphs))
+        Ok(DataResult::StringVector(graphs))
     }
 
     pub fn get_graph(&mut self, graph_name: &str) -> Result<&mut Box<dyn Graph>, String> {
