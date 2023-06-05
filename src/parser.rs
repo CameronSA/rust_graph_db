@@ -72,8 +72,8 @@ pub fn parse(command: String) -> Result<Command, String> {
                 command_json: None,
             }),
 
-            CommandType::ListVertices => Ok(Command {
-                command_type: CommandType::ListVertices,
+            CommandType::ListVertices(filter_command) => Ok(Command {
+                command_type: CommandType::ListVertices(filter_command),
                 command_json: Some(JsonObject! {
                     graph_name: identify_graph(&command_components)
                 }),
@@ -121,7 +121,7 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
     let command = command_components[1].trim();
     let mut command_type = match command {
         // Vertex selection
-        "V()" => Ok(CommandType::ListVertices),
+        "V()" => Ok(CommandType::ListVertices(Vec::new())),
         _ if command.starts_with("V(") && command.ends_with(")") => {
             let vertex_id = extract_vertex_id("V(", command);
             match vertex_id {
@@ -149,7 +149,7 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
 
     // Add follow up commands
     match command_type {
-        CommandType::ListVertices => todo!(),
+        CommandType::ListVertices(_) => todo!(),
         CommandType::AddVertex(_) => {
             let mutation_commands = parse_vertex_mutation_commmands(command_components)?;
             command_type = CommandType::AddVertex(mutation_commands);

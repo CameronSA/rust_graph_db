@@ -12,10 +12,15 @@ pub enum VertexMutationCommandType {
 }
 
 #[derive(Debug)]
+pub enum VertexFilterCommandType {
+    
+}
+
+#[derive(Debug)]
 pub enum CommandType {
     CreateGraph(String),
     ListGraphs,
-    ListVertices,
+    ListVertices(Vec<VertexFilterCommandType>),
     GetVertex(usize),
     AddVertex(Vec<VertexMutationCommandType>),
     EditVertex(usize, Vec<VertexMutationCommandType>),
@@ -51,7 +56,7 @@ impl Executor {
 
             CommandType::ListGraphs => self.graph_factory.list_graphs(),
 
-            CommandType::ListVertices => {
+            CommandType::ListVertices(filter_command) => {
                 let graph = self.get_graph(&command)?;
                 graph.list_vertices()
             }
