@@ -62,28 +62,12 @@ impl Executor {
 
             CommandType::AddVertex(mutate_command) => {
                 let graph = self.get_mut_graph(&command)?;
-                let vertex = Self::create_vertex(&mutate_command)?;
+                let vertex = create_vertex(&mutate_command)?;
                 graph.add_vertex(vertex)
             }
 
-            CommandType::Help => Err(Self::help()),
+            CommandType::Help => Err(help()),
         }
-    }
-
-    fn create_vertex(mutate_command: &Vec<VertexMutationCommandType>) -> Result<Vertex, String> {
-        let mut properties = Vec::new();
-        for command in mutate_command {
-            match command {
-                VertexMutationCommandType::Property(property) => {
-                    properties.push(VertexProperty {
-                        name: property.name.clone(),
-                        value: property.value.clone(),
-                    });
-                }
-            }
-        }
-
-        Ok(Vertex { properties })
     }
 
     fn get_mut_graph(&mut self, command: &Command) -> Result<&mut Box<dyn Graph>, String> {
@@ -112,26 +96,43 @@ impl Executor {
         }
     }
 
-    pub fn help() -> String {
-        r#"
+}
+
+pub fn help() -> String {
+    r#"
+    
+    Standalone Commands
+
+        help: prints this page
+
+        createGraph(<graph name>): creates a graph with the given name
+
+        listGraphs(): lists all graphs
+
+    Graph Commands (preceded with a graph name. E.g. graph.V()):
+
+        .V(): lists vertices in the given graph
         
-        Standalone Commands
+        .V(<id>): gets a vertex in the given graph
 
-            help: prints this page
+        .addV(): adds a vertex to the given graph
 
-            createGraph(<graph name>): creates a graph with the given name
+    "#
+    .to_string()
+}
 
-            listGraphs(): lists all graphs
-
-        Graph Commands (preceded with a graph name. E.g. graph.V()):
-
-            .V(): lists vertices in the given graph
-            
-            .V(<id>): gets a vertex in the given graph
-
-            .addV(): adds a vertex to the given graph
-
-        "#
-        .to_string()
+fn create_vertex(mutate_command: &Vec<VertexMutationCommandType>) -> Result<Vertex, String> {
+    let mut properties = Vec::new();
+    for command in mutate_command {
+        match command {
+            VertexMutationCommandType::Property(property) => {
+                properties.push(VertexProperty {
+                    name: property.name.clone(),
+                    value: property.value.clone(),
+                });
+            }
+        }
     }
+
+    Ok(Vertex { properties })
 }

@@ -6,14 +6,13 @@ mod vertex;
 use std::io::{stdin, stdout, Write};
 
 use crate::{
-    executor::Executor,
-    graph::{GraphFactory, GraphType},
-    parser::Parser,
+    executor::{Executor, help},
+    graph::{GraphFactory, GraphType}, parser::parse,
 };
 
 fn main() {
     println!("Rust Graph DB Started");
-    print!("{}", Executor::help());
+    print!("{}", help());
     let mut executor = Executor::new(GraphFactory::new(), GraphType::InMemory);
 
     loop {
@@ -24,7 +23,7 @@ fn main() {
             .read_line(&mut input)
             .expect("Error whilst attempting to read from stdin");
 
-        let command = match Parser::parse(input.trim().to_string()) {
+        let command = match parse(input.trim().to_string()) {
             Ok(command) => command,
             Err(err) => {
                 print!("{}", err);
