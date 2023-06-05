@@ -11,6 +11,7 @@ pub enum DataResult<'a> {
     StringVector(Vec<&'a str>),
     VertexVectorRef(&'a Vec<Vertex>),
     VertexRef(&'a Vertex),
+    MutableVertexRef(&'a mut Vertex),
 }
 
 pub trait Graph {
@@ -21,6 +22,8 @@ pub trait Graph {
     fn add_vertex(&mut self, vertex: Vertex) -> Result<DataResult, String>;
 
     fn get_vertex(&self, id: usize) -> Result<DataResult, String>;
+
+    fn get_mutable_vertex(&mut self, id: usize) -> Result<DataResult, String>;
 
     fn list_vertices(&self) -> Result<DataResult, String>;
 }
@@ -41,10 +44,18 @@ impl Graph for InMemoryGraph {
     }
 
     fn get_vertex(&self, id: usize) -> Result<DataResult, String> {
-        if self.vertices.len() - 1 < id {
+        if self.vertices.len() == 0 || self.vertices.len() - 1 < id {
             Err(format!("Vertex ID: {} does not exist", id))
         } else {
             Ok(DataResult::VertexRef(&self.vertices[id]))
+        }
+    }
+
+    fn get_mutable_vertex(&mut self, id: usize) -> Result<DataResult, String> {
+        if self.vertices.len() == 0 || self.vertices.len() - 1 < id {
+            Err(format!("Vertex ID: {} does not exist", id))
+        } else {
+            Ok(DataResult::MutableVertexRef(&mut self.vertices[id]))
         }
     }
 
@@ -85,7 +96,7 @@ impl GraphFactory {
             GraphType::InMemory => {
                 let graph = Box::new(InMemoryGraph {
                     name: graph_name,
-                    vertices: vec![],
+                    vertices: Vec::new(),
                 });
                 self.graphs.push(graph);
                 Ok(DataResult::UnsignedInt(self.graphs.len() - 1))

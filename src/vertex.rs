@@ -1,3 +1,5 @@
+use crate::graph::DataResult;
+
 #[derive(Debug, Clone)]
 pub enum VertexPropertyValue {
     Int32(i32),
@@ -17,4 +19,11 @@ pub struct VertexProperty {
 #[derive(Debug)]
 pub struct Vertex {
     pub properties: Vec<VertexProperty>,
+}
+
+impl Vertex {
+    pub fn update(&mut self, properties: Vec<VertexProperty>) -> Result<DataResult, String> {
+        self.properties = properties;
+        Ok(DataResult::VertexRef(self))
+    }
 }

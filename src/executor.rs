@@ -18,6 +18,7 @@ pub enum CommandType {
     ListVertices,
     GetVertex(usize),
     AddVertex(Vec<VertexMutationCommandType>),
+    EditVertex(usize, Vec<VertexMutationCommandType>),
     Help,
 }
 
@@ -64,6 +65,19 @@ impl Executor {
                 let graph = self.get_mut_graph(&command)?;
                 let vertex = create_vertex(&mutate_command)?;
                 graph.add_vertex(vertex)
+            }
+
+            CommandType::EditVertex(id, mutate_command) => {
+                let graph = self.get_mut_graph(&command)?;
+                let get_vertex_result = graph.get_mutable_vertex(*id)?;
+                let vertex = match get_vertex_result {
+                    DataResult::MutableVertexRef(vertex) => vertex,
+                    _ => return Err(format!("Mismatched return type")) 
+                };
+
+                let properties = update_vertex_properties(&mutate_command)?;
+
+                vertex.update(properties)
             }
 
             CommandType::Help => Err(help()),
@@ -115,13 +129,33 @@ pub fn help() -> String {
         
         .V(<id>): gets a vertex in the given graph
 
-        .addV(): adds a vertex to the given graph
+        .addV(): adds a vertex to the given graph. This command can be used with no mutation commands to create an empty vertex
 
+        .editV(<id>): selects a vertex with the given id for editing
+
+    Vertex mutation commands (preceded with either addV() or editV(<id>))
+
+        .property(<name>, <value>, <type>): adds a property to the given vertex
+
+    Vertex property types
+
+        int32
+        int64
+        float32
+        float64
+        string
+        datetime (stored as ms since Unix epoch)
     "#
     .to_string()
 }
 
 fn create_vertex(mutate_command: &Vec<VertexMutationCommandType>) -> Result<Vertex, String> {
+    let mut properties = update_vertex_properties(mutate_command)?;
+
+    Ok(Vertex { properties })
+}
+
+fn update_vertex_properties(mutate_command: &Vec<VertexMutationCommandType>) -> Result<Vec<VertexProperty>, String> {
     let mut properties = Vec::new();
     for command in mutate_command {
         match command {
@@ -134,5 +168,5 @@ fn create_vertex(mutate_command: &Vec<VertexMutationCommandType>) -> Result<Vert
         }
     }
 
-    Ok(Vertex { properties })
+    Ok(properties)
 }

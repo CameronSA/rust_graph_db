@@ -93,6 +93,13 @@ pub fn parse(command: String) -> Result<Command, String> {
                 }),
             }),
 
+            CommandType::EditVertex(id, mutation_command) => Ok(Command {
+                command_type: CommandType::EditVertex(id, mutation_command),
+                command_json: Some(JsonObject! {
+                    graph_name: identify_graph(&command_components)
+                }),
+            }),
+
             CommandType::Help => Ok(Command {
                 command_type: CommandType::Help,
                 command_json: None,
@@ -116,7 +123,7 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
         // Vertex selection
         "V()" => Ok(CommandType::ListVertices),
         _ if command.starts_with("V(") && command.ends_with(")") => {
-            let vertex_id = extract_vertex_id(command);
+            let vertex_id = extract_vertex_id("V(", command);
             match vertex_id {
                 Ok(id) => Ok(CommandType::GetVertex(id)),
                 Err(err) => Err(err),
@@ -125,6 +132,16 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
 
         // Vertex addition
         "addV()" => Ok(CommandType::AddVertex(Vec::new())),
+
+        // Vertex mutation
+        "editV()" => Err(format!("Must provide a vertex id")),
+        _ if command.starts_with("editV(") && command.ends_with(")") => {
+            let vertex_id = extract_vertex_id("editV(", command);
+            match vertex_id {
+                Ok(id) => Ok(CommandType::EditVertex(id, Vec::new())),
+                Err(err) => Err(err),
+            }
+        }
 
         // Catch all
         _ => Err(format!("Unrecognized command: {}", command)),
@@ -137,14 +154,20 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
             let mutation_commands = parse_vertex_mutation_commmands(command_components)?;
             command_type = CommandType::AddVertex(mutation_commands);
         }
+
+        CommandType::EditVertex(id, _) => {
+            let mutation_commands = parse_vertex_mutation_commmands(command_components)?;
+            command_type = CommandType::EditVertex(id, mutation_commands);
+        }
+
         _ => (),
     };
 
     Ok(command_type)
 }
 
-fn extract_vertex_id(get_vertex_command: &str) -> Result<usize, String> {
-    let stripped_command = get_vertex_command.replace("V(", "").replace(")", "");
+fn extract_vertex_id(key: &str, get_vertex_command: &str) -> Result<usize, String> {
+    let stripped_command = get_vertex_command.replace(key, "").replace(")", "");
     match stripped_command.parse::<usize>() {
         Ok(num) => Ok(num),
         Err(_) => Err(format!(
