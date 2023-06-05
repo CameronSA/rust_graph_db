@@ -86,8 +86,8 @@ pub fn parse(command: String) -> Result<Command, String> {
                 }),
             }),
 
-            CommandType::AddVertex(mutation_command) => Ok(Command {
-                command_type: CommandType::AddVertex(mutation_command),
+            CommandType::AddVertex(label, mutation_command) => Ok(Command {
+                command_type: CommandType::AddVertex(label, mutation_command),
                 command_json: Some(JsonObject! {
                     graph_name: identify_graph(&command_components)
                 }),
@@ -131,7 +131,13 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
         }
 
         // Vertex addition
-        "addV()" => Ok(CommandType::AddVertex(Vec::new())),
+        _ if command.starts_with("addV(") && command.ends_with(")") => {
+            let vertex_name = extract_value("addV(", command);
+            match vertex_name {
+                Ok(name) => Ok(CommandType::AddVertex(name, Vec::new())),
+                Err(err) => Err(err),
+            }
+        }
 
         // Vertex mutation
         "editV()" => Err(format!("Must provide a vertex id")),
@@ -150,9 +156,9 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
     // Add follow up commands
     match command_type {
         CommandType::ListVertices(_) => todo!(),
-        CommandType::AddVertex(_) => {
+        CommandType::AddVertex(label, _) => {
             let mutation_commands = parse_vertex_mutation_commmands(command_components)?;
-            command_type = CommandType::AddVertex(mutation_commands);
+            command_type = CommandType::AddVertex(label, mutation_commands);
         }
 
         CommandType::EditVertex(id, _) => {
@@ -166,14 +172,23 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
     Ok(command_type)
 }
 
-fn extract_vertex_id(key: &str, get_vertex_command: &str) -> Result<usize, String> {
-    let stripped_command = get_vertex_command.replace(key, "").replace(")", "");
+fn extract_vertex_id(key: &str, command: &str) -> Result<usize, String> {
+    let stripped_command = extract_value(key, command)?;
     match stripped_command.parse::<usize>() {
         Ok(num) => Ok(num),
         Err(_) => Err(format!(
             "Failed to parse value: '{}' as int",
             stripped_command
         )),
+    }
+}
+
+fn extract_value(key: &str, command: &str) -> Result<String, String> {
+    let binding = command.replace(key, "").replace(")", "");
+    let value = binding.trim();
+    match value.is_empty() {
+        true => Err(format!("Must provide a value for: {key}<value>)")),
+        false => Ok(value.to_string()),
     }
 }
 

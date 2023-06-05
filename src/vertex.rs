@@ -18,6 +18,7 @@ pub struct VertexProperty {
 
 #[derive(Debug)]
 pub struct Vertex {
+    pub label: String,
     pub properties: Vec<VertexProperty>,
 }
 
