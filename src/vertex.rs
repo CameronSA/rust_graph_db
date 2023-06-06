@@ -1,6 +1,8 @@
+use std::str::FromStr;
+
 use crate::graph::DataResult;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum VertexPropertyValue {
     Int32(i32),
     Int64(i64),
@@ -19,6 +21,8 @@ pub struct VertexProperty {
 #[derive(Debug)]
 pub struct Vertex {
     pub label: String,
+
+    // TODO: Enforce that property names are unique
     pub properties: Vec<VertexProperty>,
 }
 
@@ -26,5 +30,73 @@ impl Vertex {
     pub fn update(&mut self, properties: Vec<VertexProperty>) -> Result<DataResult, String> {
         self.properties = properties;
         Ok(DataResult::VertexRef(self))
+    }
+
+    pub fn has_property(&self, name: &str, value: &str) -> bool {
+        for property in &self.properties {
+            if property.name == name {
+                let is_match = match &property.value {
+                    VertexPropertyValue::Int32(val) => compare_to_string(*val, value),
+                    VertexPropertyValue::Int64(val) => compare_to_string(*val, value),
+                    VertexPropertyValue::Float32(val) => compare_to_string(*val, value),
+                    VertexPropertyValue::Float64(val) => compare_to_string(*val, value),
+                    VertexPropertyValue::String(val) => val == value.trim(),
+
+                    // TODO: This isn't that practical unless searching for a specific epoch
+                    VertexPropertyValue::DateTime(val) => compare_to_string(*val, value),
+                };
+
+                match is_match {
+                    true => return true,
+                    false => (),
+                }
+            }
+        }
+
+        false
+    }
+
+    /// Only works for string properties
+    pub fn has_property_like(&self, name: &str, search_term: &str) -> bool {
+        let string_properties = self
+            .properties
+            .iter()
+            .filter(|property| match property.value {
+                VertexPropertyValue::String(_) => true,
+                _ => false,
+            })
+            .collect::<Vec<_>>();
+
+        for property in string_properties {
+            if property.name == name {
+                let is_match = match &property.value {
+                    VertexPropertyValue::String(val) => val.contains(search_term.trim()),
+                    _ => false,
+                };
+
+                match is_match {
+                    true => return true,
+                    false => (),
+                }
+            }
+        }
+
+        false
+    }
+}
+
+fn compare_to_string<T>(number: T, string: &str) -> bool
+where
+    T: FromStr + PartialEq,
+{
+    match string.parse::<T>() {
+        Ok(parsed_val) => {
+            if parsed_val == number {
+                return true;
+            }
+
+            false
+        }
+        Err(_) => false,
     }
 }

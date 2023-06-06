@@ -1,4 +1,4 @@
-use crate::{vertex::Vertex, executor::VertexFilterCommandType};
+use crate::{executor::VertexFilterCommandType, vertex::Vertex};
 
 #[derive(Debug)]
 pub enum GraphType {
@@ -9,7 +9,7 @@ pub enum GraphType {
 pub enum DataResult<'a> {
     UnsignedInt(usize),
     StringVector(Vec<&'a str>),
-    VertexVectorRef(&'a Vec<Vertex>),
+    VertexVectorRefs(&'a Vec<Vertex>),
     VertexRef(&'a Vertex),
     MutableVertexRef(&'a mut Vertex),
 }
@@ -40,7 +40,33 @@ impl Graph for InMemoryGraph {
     }
 
     fn list_vertices(&self, filters: &Vec<VertexFilterCommandType>) -> Result<DataResult, String> {
-        //Ok(DataResult::VertexVectorRef(&self.vertices))
+        // TODO: Could have some optimisations here around selecting the order of filter applications
+
+        if self.vertices.len() < 1 {
+            return Ok(DataResult::VertexVectorRefs(&self.vertices));
+        }
+
+        let mut vertex_indices = self
+            .vertices
+            .iter()
+            .enumerate()
+            .map(|(index, _)| index)
+            .collect::<Vec<_>>();
+        for filter in filters {
+            match filter {
+                VertexFilterCommandType::HasName(name) => {
+                    vertex_indices.retain(|index| &self.vertices[*index].label == name);
+                }
+                VertexFilterCommandType::HasProperty(name, value) => {
+                    vertex_indices.retain(|index| self.vertices[*index].has_property(name, value));
+                }
+                VertexFilterCommandType::HasPropertyLike(name, search_term) => {
+                    vertex_indices
+                        .retain(|index| self.vertices[*index].has_property_like(name, search_term));
+                }
+            }
+        }
+
         todo!()
     }
 
