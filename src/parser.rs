@@ -1,9 +1,10 @@
+mod list_vertices;
 mod mutate_vertex;
 
 use crate::executor::{Command, CommandType};
 use json::object as JsonObject;
 
-use self::mutate_vertex::parse_vertex_mutation_commmands;
+use self::{mutate_vertex::parse_vertex_mutation_commmands, list_vertices::parse_list_vertices_commands};
 
 pub enum JsonProperty {
     GraphName,
@@ -155,12 +156,14 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
 
     // Add follow up commands
     match command_type {
-        CommandType::ListVertices(_) => todo!(),
+        CommandType::ListVertices(_) => {
+            let filter_commands = parse_list_vertices_commands(command_components)?;
+            command_type = CommandType::ListVertices(filter_commands);
+        }
         CommandType::AddVertex(label, _) => {
             let mutation_commands = parse_vertex_mutation_commmands(command_components)?;
             command_type = CommandType::AddVertex(label, mutation_commands);
         }
-
         CommandType::EditVertex(id, _) => {
             let mutation_commands = parse_vertex_mutation_commmands(command_components)?;
             command_type = CommandType::EditVertex(id, mutation_commands);
