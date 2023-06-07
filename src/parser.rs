@@ -207,7 +207,7 @@ fn extract_name_value_pair(key: &str, command: &str) -> Result<(String,String),S
                 return Err(msg);
             }
 
-            Ok((values[0].to_string(), values[1].to_string()))
+            Ok((name.to_string(), value.to_string()))
         },
         _ => Err(msg)     
     }
