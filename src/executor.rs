@@ -32,6 +32,7 @@ pub enum CommandType {
     GetVertex(usize),
     AddVertex(String, Vec<VertexMutationCommandType>),
     EditVertex(usize, Vec<VertexMutationCommandType>),
+    RemoveVertex(usize),
     Help,
 }
 
@@ -93,6 +94,11 @@ impl Executor {
                 vertex.update(properties)
             }
 
+            CommandType::RemoveVertex(id) => {
+                let graph = self.get_mut_graph(&command)?;
+                graph.remove_vertex(*id)
+            }
+
             CommandType::Help => Err(help()),
         }
     }
@@ -143,7 +149,9 @@ pub fn help() -> String {
 
         .addV(<label>): adds a vertex to the given graph. This command can be used with no mutation commands to create an empty vertex
 
-        .editV(<id>): selects a vertex with the given id for editing
+        .editV(<id>): selects the vertex with the given id for editing
+
+        .deleteV(<id>): deletes the vertex with the given id
 
     Vertex mutation commands (preceded with either addV() or editV(<id>))
 

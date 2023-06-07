@@ -30,6 +30,8 @@ pub trait Graph {
 
     fn get_vertex(&self, id: usize) -> Result<DataResult, String>;
 
+    fn remove_vertex(&mut self, id: usize) -> Result<DataResult, String>;
+
     fn get_mutable_vertex(&mut self, id: usize) -> Result<DataResult, String>;
 
     fn list_vertices(&self, filters: &Vec<VertexFilterCommandType>) -> Result<DataResult, String>;
@@ -99,6 +101,16 @@ impl Graph for InMemoryGraph {
             Err(format!("Vertex ID: {} does not exist", id))
         } else {
             Ok(DataResult::VertexRef(&self.vertices[id]))
+        }
+    }
+    
+    fn remove_vertex(&mut self, id: usize) -> Result<DataResult, String> {
+        if self.vertices.len() == 0 || self.vertices.len() -1 < id {
+            Err(format!("Vertex ID: {} does not exist", id))
+        } else {
+            // TODO: Need a better way to grant vertex IDs without using the vector index because this will change vertex IDs
+            self.vertices.remove(id);
+            Ok(DataResult::UnsignedInt(id))
         }
     }
 

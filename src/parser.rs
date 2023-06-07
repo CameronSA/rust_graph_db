@@ -16,6 +16,8 @@ const GET_VERTEX_KEY: &str = "V(";
 const ADD_VERTEX_KEY: &str = "addV(";
 const EDIT_VERTEX_KEY: &str = "editV(";
 const EDIT_VERTEX_EMPTY_KEY: &str = "editV()";
+const DELETE_VERTEX_KEY: &str = "deleteV(";
+const DELETE_VERTEX_EMPTY_KEY: &str = "deleteV()";
 const PROPERTY_KEY: &str = "property(";
 const REMOVE_PROPERTY_KEY: &str = "removeProperty(";
 const HAS_LABEL_KEY: &str = "hasLabel(";
@@ -122,6 +124,13 @@ pub fn parse(command: String) -> Result<Command, String> {
                 }),
             }),
 
+            CommandType::RemoveVertex(id) => Ok(Command {
+                command_type: CommandType::RemoveVertex(id),
+                command_json: Some(JsonObject! {
+                    graph_name: identify_graph(&command_components)
+                }),
+            }),
+
             CommandType::Help => Ok(Command {
                 command_type: CommandType::Help,
                 command_json: None,
@@ -137,7 +146,7 @@ fn identify_graph(command_components: &Vec<&str>) -> String {
 
 fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, String> {
     if command_components.len() < 2 {
-        return Err(format!("Not enough command components"));
+        return Err(format!("Invalid command"));
     }
 
     let command = command_components[1].trim();
@@ -162,11 +171,21 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
         }
 
         // Vertex mutation
-        EDIT_VERTEX_EMPTY_KEY => Err(format!("Must provide a vertex id")),
+        EDIT_VERTEX_EMPTY_KEY => Err(format!("Must provide a vertex ID")),
         _ if command.starts_with(EDIT_VERTEX_KEY) && command.ends_with(END_COMMAND_KEY) => {
             let vertex_id = extract_number(EDIT_VERTEX_KEY, command);
             match vertex_id {
                 Ok(id) => Ok(CommandType::EditVertex(id, Vec::new())),
+                Err(err) => Err(err),
+            }
+        }
+
+        // Vertex deletion
+        DELETE_VERTEX_EMPTY_KEY => Err(format!("Must provide a vertex ID")),
+        _ if command.starts_with(DELETE_VERTEX_KEY) && command.ends_with(END_COMMAND_KEY) => {
+            let vertex_id = extract_number(DELETE_VERTEX_KEY, command);
+            match vertex_id {
+                Ok(id) => Ok(CommandType::RemoveVertex(id)),
                 Err(err) => Err(err),
             }
         }
