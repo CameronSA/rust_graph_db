@@ -27,7 +27,11 @@ impl Vertex {
 
             match existing_property_index {
                 Some(index) => match property.flagged_for_removal {
-                    true => property_indices_to_remove.push(index),
+                    true => {
+                        if !property_indices_to_remove.contains(&index) {
+                            property_indices_to_remove.push(index)
+                        }
+                    }
                     false => self.properties[index] = property,
                 },
                 None => self.properties.push(property),

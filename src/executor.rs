@@ -188,18 +188,25 @@ fn update_vertex_properties(
     mutate_command: &Vec<VertexMutationCommandType>,
 ) -> Result<Vec<Property>, String> {
     let mut properties = Vec::new();
+    let mut added_names = Vec::new();
     for command in mutate_command {
         match command {
             VertexMutationCommandType::Property(property) => {
+                if added_names.contains(&property.name) {
+                    return Err(format!("Cannot have multiple properties with the same name"));
+                }
+
+                added_names.push(property.name.to_owned());
+
                 properties.push(Property {
-                    name: property.name.clone(),
-                    value: property.value.clone(),
+                    name: property.name.to_owned(),
+                    value: property.value.to_owned(),
                     flagged_for_removal: false,
                 });
             }
             VertexMutationCommandType::RemoveProperty(property_name) => {
                 properties.push(Property {
-                    name: property_name.clone(),
+                    name: property_name.to_owned(),
                     value: PropertyValue::Int32(0),
                     flagged_for_removal: true,
                 });

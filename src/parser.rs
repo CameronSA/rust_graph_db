@@ -208,6 +208,8 @@ fn extract_number(key: &str, command: &str) -> Result<usize, String> {
 }
 
 fn extract_string(key: &str, command: &str) -> Result<String, String> {
+    // TODO: guard against commas
+
     let binding = command.replace(key, "").replace(END_COMMAND_KEY, "");
     let value = binding.trim();
     match value.is_empty() {
