@@ -195,6 +195,24 @@ fn extract_value(key: &str, command: &str) -> Result<String, String> {
     }
 }
 
+fn extract_name_value_pair(key: &str, command: &str) -> Result<(String,String),String>{
+    let binding = command.replace(key, "").replace(")", "");
+    let values: Vec<&str> = binding.trim().split(",").collect();
+    let msg = format!("Invalid format for: {key}<value>). Must provide a name and value pair separated by a comma");
+    match values.len() {
+        2 => {
+            let name = values[0].trim();
+            let value = values[1].trim();
+            if name.is_empty() || value.is_empty() {
+                return Err(msg);
+            }
+
+            Ok((values[0].to_string(), values[1].to_string()))
+        },
+        _ => Err(msg)     
+    }
+}
+
 fn extract_graph_name(create_graph_command: &str) -> Result<String, String> {
     let binding = create_graph_command
         .replace("createGraph(", ")")
