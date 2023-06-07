@@ -3,12 +3,13 @@ use json::JsonValue as Json;
 use crate::{
     graph::{DataResult, Graph, GraphFactory, GraphType},
     parser::JsonProperty,
-    vertex::{Vertex, VertexProperty},
+    vertex::{Vertex, VertexProperty, VertexPropertyValue},
 };
 
 #[derive(Debug)]
 pub enum VertexMutationCommandType {
     Property(VertexProperty),
+    RemoveProperty(String),
 }
 
 #[derive(Debug)]
@@ -145,6 +146,8 @@ pub fn help() -> String {
 
         .property(<name>, <value>, <type>): adds a property to the given vertex
 
+        .removeProperty(<name>): removes the property with the given name
+
     Vertex filter commands (preceded with V())
 
         .hasLabel(<label>): selects vertices with the given label
@@ -187,6 +190,14 @@ fn update_vertex_properties(
                 properties.push(VertexProperty {
                     name: property.name.clone(),
                     value: property.value.clone(),
+                    flagged_for_removal: false,
+                });
+            }
+            VertexMutationCommandType::RemoveProperty(property_name) => {
+                properties.push(VertexProperty{
+                    name: property_name.clone(),
+                    value: VertexPropertyValue::Int32(0),
+                    flagged_for_removal: true,
                 });
             }
         }

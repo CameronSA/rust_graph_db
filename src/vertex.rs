@@ -16,6 +16,7 @@ pub enum VertexPropertyValue {
 pub struct VertexProperty {
     pub name: String,
     pub value: VertexPropertyValue,
+    pub flagged_for_removal: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -33,15 +34,26 @@ impl Vertex {
             return Ok(DataResult::VertexRef(self));
         }
 
-        // If the property exists, overwrite it. Otherwise, add a new one
+        let mut property_indices_to_remove = Vec::new();
+
         for property in properties {
             let existing_property_index =
                 get_first_property_index_by_name(&self.properties, &property.name);
 
             match existing_property_index {
-                Some(index) => self.properties[index] = property,
+                Some(index) => match property.flagged_for_removal {
+                    true => property_indices_to_remove.push(index),
+                    false => self.properties[index] = property,
+                } 
                 None => self.properties.push(property),
             }
+        }
+
+        // sort by descending
+        property_indices_to_remove.sort_by(|a,b| b.cmp(a));
+
+        for index in property_indices_to_remove {
+            self.properties.remove(index);
         }
 
         Ok(DataResult::VertexRef(self))

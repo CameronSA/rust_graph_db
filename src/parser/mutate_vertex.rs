@@ -1,5 +1,5 @@
 use crate::{executor::VertexMutationCommandType, vertex::{VertexProperty, VertexPropertyValue}};
-use super::{ValidTypes, PROPERTY_KEY, END_COMMAND_KEY};
+use super::{ValidTypes, PROPERTY_KEY, END_COMMAND_KEY, extract_string, REMOVE_PROPERTY_KEY};
 
 pub fn parse_vertex_mutation_commmands(
     commands: &Vec<&str>,
@@ -15,6 +15,12 @@ pub fn parse_vertex_mutation_commmands(
             _ if command.starts_with(PROPERTY_KEY) && command.ends_with(END_COMMAND_KEY) => {
                 let property = parse_add_vertex_property_command(command)?;
                 let vertex_mutation_command = VertexMutationCommandType::Property(property);
+                vertex_mutation_commands.push(vertex_mutation_command);
+            }
+
+            _ if command.starts_with(REMOVE_PROPERTY_KEY) && command.ends_with(END_COMMAND_KEY) => {
+                let property_name = extract_string(REMOVE_PROPERTY_KEY, command)?;
+                let vertex_mutation_command = VertexMutationCommandType::RemoveProperty(property_name);
                 vertex_mutation_commands.push(vertex_mutation_command);
             }
 
@@ -110,5 +116,6 @@ fn parse_add_vertex_property_command(command: &str) -> Result<VertexProperty, St
     Ok(VertexProperty {
         name: property_name.to_string(),
         value: property_value,
+        flagged_for_removal: false,
     })
 }
