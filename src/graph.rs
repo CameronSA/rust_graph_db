@@ -109,7 +109,7 @@ impl Graph for InMemoryGraph {
         if self.vertices.len() == 0 || self.vertices.len() -1 < id {
             Err(format!("Vertex ID: {} does not exist", id))
         } else {
-            // TODO: Need a better way to grant vertex IDs without using the vector index because this will change vertex IDs
+            // TODO: Need a better way to grant vertex IDs without using the vector index because this will change vertex IDs and break edges
             self.vertices.remove(id);
             Ok(DataResult::UnsignedInt(id))
         }
