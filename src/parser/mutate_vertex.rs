@@ -1,5 +1,5 @@
 use crate::{executor::VertexMutationCommandType, vertex::{VertexProperty, VertexPropertyValue}};
-use super::ValidTypes;
+use super::{ValidTypes, PROPERTY_KEY, END_COMMAND_KEY};
 
 pub fn parse_vertex_mutation_commmands(
     commands: &Vec<&str>,
@@ -12,7 +12,7 @@ pub fn parse_vertex_mutation_commmands(
     let mut vertex_mutation_commands = Vec::new();
     for command in commands.iter().skip(2) {
         match command {
-            _ if command.starts_with("property(") && command.ends_with(")") => {
+            _ if command.starts_with(PROPERTY_KEY) && command.ends_with(END_COMMAND_KEY) => {
                 let property = parse_add_vertex_property_command(command)?;
                 let vertex_mutation_command = VertexMutationCommandType::Property(property);
                 vertex_mutation_commands.push(vertex_mutation_command);
@@ -26,7 +26,7 @@ pub fn parse_vertex_mutation_commmands(
 }
 
 fn parse_add_vertex_property_command(command: &str) -> Result<VertexProperty, String> {
-    let stripped_command = command.replace("property(", "").replace(")", "");
+    let stripped_command = command.replace(PROPERTY_KEY, "").replace(END_COMMAND_KEY, "");
     let stripped_command_components: Vec<&str> = stripped_command.split(",").collect();
 
     // Property name, value and type
@@ -92,6 +92,7 @@ fn parse_add_vertex_property_command(command: &str) -> Result<VertexProperty, St
             VertexPropertyValue::String(property_value_str.to_string())
         }
         _ if property_type_str == ValidTypes::DateTime.as_str() => {
+            // TODO: Not user friendly to input ms since epoch
             match property_value_str.parse::<i64>() {
                 Ok(value) => VertexPropertyValue::DateTime(value),
                 Err(_) => {

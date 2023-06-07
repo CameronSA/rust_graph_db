@@ -1,4 +1,7 @@
-use crate::{executor::VertexFilterCommandType, vertex::{Vertex, VertexPropertyValue}};
+use crate::{
+    executor::VertexFilterCommandType,
+    vertex::{Vertex, VertexPropertyValue},
+};
 
 #[derive(Debug)]
 pub enum GraphType {
@@ -12,7 +15,7 @@ pub enum DataResult<'a> {
     VertexIndexVector(Vec<usize>),
     VertexRef(&'a Vertex),
     MutableVertexRef(&'a mut Vertex),
-    VertexValueVector(Vec<Option<&'a VertexPropertyValue>>)
+    VertexValueVector(Vec<Option<&'a VertexPropertyValue>>),
 }
 
 pub trait Graph {
@@ -61,25 +64,29 @@ impl Graph for InMemoryGraph {
                 VertexFilterCommandType::HasName(name) => {
                     vertex_indices.retain(|index| &self.vertices[*index].label == name);
                 }
-                VertexFilterCommandType::HasProperty(name, value) => {
-                    vertex_indices.retain(|index| self.vertices[*index].has_property(name, value));
+                VertexFilterCommandType::HasProperty(name) => {
+                    vertex_indices.retain(|index| self.vertices[*index].has_property(name));
+                }
+                VertexFilterCommandType::HasPropertyValue(name, value) => {
+                    vertex_indices.retain(|index| self.vertices[*index].has_property_value(name, value));
                 }
                 VertexFilterCommandType::HasPropertyLike(name, search_term) => {
                     vertex_indices
                         .retain(|index| self.vertices[*index].has_property_like(name, search_term));
                 }
                 VertexFilterCommandType::Values(name) => {
-                    for index in &vertex_indices{
+                    for index in &vertex_indices {
                         let value = self.vertices[*index].get_property_value(name);
                         vertex_value_vector.push(value);
+                        return_values = true;
                     }
                 }
             }
         }
 
         match return_values {
-            true => Ok(DataResult::VertexIndexVector(vertex_indices)),
-            false => Ok(DataResult::VertexValueVector(vertex_value_vector)),
+            true => Ok(DataResult::VertexValueVector(vertex_value_vector)),
+            false => Ok(DataResult::VertexIndexVector(vertex_indices)),
         }
     }
 

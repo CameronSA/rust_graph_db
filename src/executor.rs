@@ -14,7 +14,8 @@ pub enum VertexMutationCommandType {
 #[derive(Debug)]
 pub enum VertexFilterCommandType {
     HasName(String),
-    HasProperty(String, String), // name, value pair
+    HasProperty(String), // name
+    HasPropertyValue(String, String), // name, value pair
     HasPropertyLike(String, String), // name, search term pair
     Values(String), // property name
 }
@@ -148,8 +149,10 @@ pub fn help() -> String {
 
         .hasLabel(<label>): selects vertices with the given label
 
-        .hasProperty(<name>, <value>): selects vertices with the given property
-        
+        .hasProperty(<name>): selects vertices with the given property name
+
+        .hasPropertyValue(<name>, <value>): selects vertices with the given property name and value.
+                
         .hasPropertyLike(<name>, <search_term>): selects vertices with properties matching the given search term (string property values only)
 
         .values(<name>): selects the value of the property with the given name for each selected vertex

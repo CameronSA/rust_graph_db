@@ -4,7 +4,25 @@ mod mutate_vertex;
 use crate::executor::{Command, CommandType};
 use json::object as JsonObject;
 
-use self::{mutate_vertex::parse_vertex_mutation_commmands, list_vertices::parse_list_vertices_commands};
+use self::{
+    list_vertices::parse_list_vertices_commands, mutate_vertex::parse_vertex_mutation_commmands,
+};
+
+const HELP_KEY: &str = "help";
+const CREATE_GRAPH_KEY: &str = "createGraph(";
+const LIST_GRAPHS_KEY: &str = "listGraph()";
+const LIST_VERTICES_KEY: &str = "V()";
+const GET_VERTEX_KEY: &str = "V(";
+const ADD_VERTEX_KEY: &str = "addV(";
+const EDIT_VERTEX_KEY: &str = "editV(";
+const EDIT_VERTEX_EMPTY_KEY: &str = "editV()";
+const PROPERTY_KEY: &str = "property(";
+const HAS_LABEL_KEY: &str = "hasLabel(";
+const HAS_PROPERTY_KEY: &str = "hasProperty(";
+const HAS_PROPERTY_VALUE_KEY: &str = "hasPropertyValue(";
+const HAS_PROPERTY_LIKE_KEY: &str = "hasPropertyLike(";
+const VALUES_KEY: &str = "values(";
+const END_COMMAND_KEY: &str = ")";
 
 pub enum JsonProperty {
     GraphName,
@@ -45,13 +63,13 @@ pub fn parse(command: String) -> Result<Command, String> {
 
     // Graph commands
     let mut command_type = None;
-    if command.starts_with("createGraph(") && command.ends_with(")") {
+    if command.starts_with(CREATE_GRAPH_KEY) && command.ends_with(END_COMMAND_KEY) {
         let graph_name = extract_graph_name(&command_components[0])?;
 
         command_type = Some(Ok(CommandType::CreateGraph(graph_name)));
-    } else if command == "listGraphs()" {
+    } else if command == LIST_GRAPHS_KEY {
         command_type = Some(Ok(CommandType::ListGraphs));
-    } else if command.to_lowercase() == "help" {
+    } else if command.to_lowercase() == HELP_KEY {
         command_type = Some(Ok(CommandType::Help));
     }
 
@@ -122,9 +140,9 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
     let command = command_components[1].trim();
     let mut command_type = match command {
         // Vertex selection
-        "V()" => Ok(CommandType::ListVertices(Vec::new())),
-        _ if command.starts_with("V(") && command.ends_with(")") => {
-            let vertex_id = extract_vertex_id("V(", command);
+        LIST_GRAPHS_KEY => Ok(CommandType::ListVertices(Vec::new())),
+        _ if command.starts_with(GET_VERTEX_KEY) && command.ends_with(END_COMMAND_KEY) => {
+            let vertex_id = extract_number(GET_VERTEX_KEY, command);
             match vertex_id {
                 Ok(id) => Ok(CommandType::GetVertex(id)),
                 Err(err) => Err(err),
@@ -132,8 +150,8 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
         }
 
         // Vertex addition
-        _ if command.starts_with("addV(") && command.ends_with(")") => {
-            let vertex_name = extract_value("addV(", command);
+        _ if command.starts_with(ADD_VERTEX_KEY) && command.ends_with(END_COMMAND_KEY) => {
+            let vertex_name = extract_string(ADD_VERTEX_KEY, command);
             match vertex_name {
                 Ok(name) => Ok(CommandType::AddVertex(name, Vec::new())),
                 Err(err) => Err(err),
@@ -141,9 +159,9 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
         }
 
         // Vertex mutation
-        "editV()" => Err(format!("Must provide a vertex id")),
-        _ if command.starts_with("editV(") && command.ends_with(")") => {
-            let vertex_id = extract_vertex_id("editV(", command);
+        EDIT_VERTEX_EMPTY_KEY => Err(format!("Must provide a vertex id")),
+        _ if command.starts_with(EDIT_VERTEX_KEY) && command.ends_with(END_COMMAND_KEY) => {
+            let vertex_id = extract_number(EDIT_VERTEX_KEY, command);
             match vertex_id {
                 Ok(id) => Ok(CommandType::EditVertex(id, Vec::new())),
                 Err(err) => Err(err),
@@ -175,8 +193,8 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
     Ok(command_type)
 }
 
-fn extract_vertex_id(key: &str, command: &str) -> Result<usize, String> {
-    let stripped_command = extract_value(key, command)?;
+fn extract_number(key: &str, command: &str) -> Result<usize, String> {
+    let stripped_command = extract_string(key, command)?;
     match stripped_command.parse::<usize>() {
         Ok(num) => Ok(num),
         Err(_) => Err(format!(
@@ -186,8 +204,8 @@ fn extract_vertex_id(key: &str, command: &str) -> Result<usize, String> {
     }
 }
 
-fn extract_value(key: &str, command: &str) -> Result<String, String> {
-    let binding = command.replace(key, "").replace(")", "");
+fn extract_string(key: &str, command: &str) -> Result<String, String> {
+    let binding = command.replace(key, "").replace(END_COMMAND_KEY, "");
     let value = binding.trim();
     match value.is_empty() {
         true => Err(format!("Must provide a value for: {key}<value>)")),
@@ -195,8 +213,8 @@ fn extract_value(key: &str, command: &str) -> Result<String, String> {
     }
 }
 
-fn extract_name_value_pair(key: &str, command: &str) -> Result<(String,String),String>{
-    let binding = command.replace(key, "").replace(")", "");
+fn extract_name_value_pair(key: &str, command: &str) -> Result<(String, String), String> {
+    let binding = command.replace(key, "").replace(END_COMMAND_KEY, "");
     let values: Vec<&str> = binding.trim().split(",").collect();
     let msg = format!("Invalid format for: {key}<value>). Must provide a name and value pair separated by a comma");
     match values.len() {
@@ -208,15 +226,15 @@ fn extract_name_value_pair(key: &str, command: &str) -> Result<(String,String),S
             }
 
             Ok((name.to_string(), value.to_string()))
-        },
-        _ => Err(msg)     
+        }
+        _ => Err(msg),
     }
 }
 
 fn extract_graph_name(create_graph_command: &str) -> Result<String, String> {
     let binding = create_graph_command
-        .replace("createGraph(", ")")
-        .replace(")", "");
+        .replace(CREATE_GRAPH_KEY, END_COMMAND_KEY)
+        .replace(END_COMMAND_KEY, "");
     let name = binding.trim();
 
     match name.is_empty() {

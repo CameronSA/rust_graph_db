@@ -1,6 +1,11 @@
 use crate::{
     executor::VertexFilterCommandType,
-    parser::{extract_name_value_pair, extract_value},
+    parser::{extract_name_value_pair, extract_string},
+};
+
+use super::{
+    END_COMMAND_KEY, HAS_LABEL_KEY, HAS_PROPERTY_KEY, HAS_PROPERTY_LIKE_KEY,
+    HAS_PROPERTY_VALUE_KEY, VALUES_KEY,
 };
 
 pub fn parse_list_vertices_commands(
@@ -14,23 +19,34 @@ pub fn parse_list_vertices_commands(
     let mut vertex_filter_commands = Vec::new();
     for command in commands.iter().skip(2) {
         match command {
-            _ if command.starts_with("hasLabel(") && command.ends_with(")") => {
-                let name = extract_value("hasLabel(", command)?;
+            _ if command.starts_with(HAS_LABEL_KEY) && command.ends_with(END_COMMAND_KEY) => {
+                let name = extract_string(HAS_LABEL_KEY, command)?;
                 vertex_filter_commands.push(VertexFilterCommandType::HasName(name));
             }
 
-            _ if command.starts_with("hasProperty(") && command.ends_with(")") => {
-                let (name, value) = extract_name_value_pair("hasProperty(", command)?;
-                vertex_filter_commands.push(VertexFilterCommandType::HasProperty(name, value));
+            _ if command.starts_with(HAS_PROPERTY_KEY) && command.ends_with(END_COMMAND_KEY) => {
+                let name = extract_string(HAS_PROPERTY_KEY, command)?;
+                vertex_filter_commands.push(VertexFilterCommandType::HasName(name));
             }
 
-            _ if command.starts_with("hasPropertyLike(") && command.ends_with(")") => {
-                let (name, search_term) = extract_name_value_pair("hasPropertyLike(", command)?;
-                vertex_filter_commands.push(VertexFilterCommandType::HasPropertyLike(name, search_term));
+            _ if command.starts_with(HAS_PROPERTY_VALUE_KEY)
+                && command.ends_with(END_COMMAND_KEY) =>
+            {
+                let (name, value) = extract_name_value_pair(HAS_PROPERTY_VALUE_KEY, command)?;
+                vertex_filter_commands.push(VertexFilterCommandType::HasPropertyValue(name, value));
             }
 
-            _ if command.starts_with("values(") && command.ends_with(")") => {
-                let name = extract_value("values(", command)?;
+            _ if command.starts_with(HAS_PROPERTY_LIKE_KEY)
+                && command.ends_with(END_COMMAND_KEY) =>
+            {
+                let (name, search_term) = extract_name_value_pair(HAS_PROPERTY_LIKE_KEY, command)?;
+                vertex_filter_commands
+                    .push(VertexFilterCommandType::HasPropertyLike(name, search_term));
+            }
+
+            _ if command.starts_with(VALUES_KEY) && command.ends_with(END_COMMAND_KEY) => {
+                // TODO: ability to select multiple properties
+                let name = extract_string(VALUES_KEY, command)?;
                 vertex_filter_commands.push(VertexFilterCommandType::Values(name));
             }
 

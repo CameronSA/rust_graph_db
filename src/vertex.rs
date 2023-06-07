@@ -32,7 +32,17 @@ impl Vertex {
         Ok(DataResult::VertexRef(self))
     }
 
-    pub fn has_property(&self, name: &str, value: &str) -> bool {
+    pub fn has_property(&self, name: &str) -> bool {
+        for property in &self.properties {
+            if property.name == name {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    pub fn has_property_value(&self, name: &str, value: &str) -> bool {
         for property in &self.properties {
             if property.name == name {
                 let is_match = match &property.value {
