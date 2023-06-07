@@ -28,7 +28,22 @@ pub struct Vertex {
 
 impl Vertex {
     pub fn update(&mut self, properties: Vec<VertexProperty>) -> Result<DataResult, String> {
-        self.properties = properties;
+        if self.properties.len() < 1 {
+            self.properties = properties;
+            return Ok(DataResult::VertexRef(self));
+        }
+
+        // If the property exists, overwrite it. Otherwise, add a new one
+        for property in properties {
+            let existing_property_index =
+                get_first_property_index_by_name(&self.properties, &property.name);
+
+            match existing_property_index {
+                Some(index) => self.properties[index] = property,
+                None => self.properties.push(property),
+            }
+        }
+
         Ok(DataResult::VertexRef(self))
     }
 
@@ -95,8 +110,8 @@ impl Vertex {
     }
 
     pub fn get_property_value(&self, name: &str) -> Option<&VertexPropertyValue> {
-        for property in &self.properties{
-            if property.name == name{
+        for property in &self.properties {
+            if property.name == name {
                 return Some(&property.value);
             }
         }
@@ -119,4 +134,17 @@ where
         }
         Err(_) => false,
     }
+}
+
+fn get_first_property_index_by_name<'a>(
+    properties: &Vec<VertexProperty>,
+    name: &str,
+) -> Option<usize> {
+    for i in 0..properties.len() {
+        if properties[i].name == name {
+            return Some(i);
+        }
+    }
+
+    None
 }
