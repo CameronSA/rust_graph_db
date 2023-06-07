@@ -140,7 +140,7 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
     let command = command_components[1].trim();
     let mut command_type = match command {
         // Vertex selection
-        LIST_GRAPHS_KEY => Ok(CommandType::ListVertices(Vec::new())),
+        LIST_VERTICES_KEY => Ok(CommandType::ListVertices(Vec::new())),
         _ if command.starts_with(GET_VERTEX_KEY) && command.ends_with(END_COMMAND_KEY) => {
             let vertex_id = extract_number(GET_VERTEX_KEY, command);
             match vertex_id {
