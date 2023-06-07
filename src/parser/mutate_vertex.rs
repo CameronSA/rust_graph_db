@@ -46,6 +46,19 @@ fn parse_add_vertex_property_command(command: &str) -> Result<VertexProperty, St
 
     // Validate value and type
     let property_value = match property_type_str {
+        _ if property_type_str == ValidTypes::Boolean.as_str() => {
+            match property_value_str.parse::<bool>() {
+                Ok(value) => VertexPropertyValue::Boolean(value),
+                Err(_) => {
+                    return Err(format!(
+                        "Failed to parse value: {} as {}",
+                        property_value_str,
+                        ValidTypes::Boolean.as_str()
+                    ))
+                }
+            }
+        }
+
         _ if property_type_str == ValidTypes::Int32.as_str() => {
             match property_value_str.parse::<i32>() {
                 Ok(value) => VertexPropertyValue::Int32(value),

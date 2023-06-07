@@ -4,6 +4,7 @@ use crate::graph::DataResult;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum VertexPropertyValue {
+    Boolean(bool),
     Int32(i32),
     Int64(i64),
     Float32(f32),
@@ -73,6 +74,7 @@ impl Vertex {
         for property in &self.properties {
             if property.name == name {
                 let is_match = match &property.value {
+                    VertexPropertyValue::Boolean(val) => compare_to_string(*val, value),
                     VertexPropertyValue::Int32(val) => compare_to_string(*val, value),
                     VertexPropertyValue::Int64(val) => compare_to_string(*val, value),
                     VertexPropertyValue::Float32(val) => compare_to_string(*val, value),

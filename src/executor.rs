@@ -161,7 +161,8 @@ pub fn help() -> String {
         .values(<name>): selects the value of the property with the given name for each selected vertex
 
     Vertex property types
-
+        
+        boolean
         int32
         int64
         float32

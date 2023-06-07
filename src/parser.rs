@@ -38,6 +38,7 @@ impl JsonProperty {
 }
 
 pub enum ValidTypes {
+    Boolean,
     Int32,
     Int64,
     Float32,
@@ -49,6 +50,7 @@ pub enum ValidTypes {
 impl ValidTypes {
     pub fn as_str(&self) -> &'static str {
         match self {
+            ValidTypes::Boolean => "boolean",
             ValidTypes::Int32 => "int32",
             ValidTypes::Int64 => "int64",
             ValidTypes::Float32 => "float32",
