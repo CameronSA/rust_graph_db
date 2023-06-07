@@ -144,6 +144,16 @@ pub fn help() -> String {
 
         .property(<name>, <value>, <type>): adds a property to the given vertex
 
+    Vertex filter commands (preceded with V())
+
+        .hasLabel(<label>): selects vertices with the given label
+
+        .hasProperty(<name>, <value>): selects vertices with the given property
+        
+        .hasPropertyLike(<name>, <search_term>): selects vertices with properties matching the given search term (string property values only)
+
+        .values(<name>): selects the value of the property with the given name for each selected vertex
+
     Vertex property types
 
         int32

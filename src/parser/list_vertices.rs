@@ -14,8 +14,8 @@ pub fn parse_list_vertices_commands(
     let mut vertex_filter_commands = Vec::new();
     for command in commands.iter().skip(2) {
         match command {
-            _ if command.starts_with("hasName(") && command.ends_with(")") => {
-                let name = extract_value("hasName(", command)?;
+            _ if command.starts_with("hasLabel(") && command.ends_with(")") => {
+                let name = extract_value("hasLabel(", command)?;
                 vertex_filter_commands.push(VertexFilterCommandType::HasName(name));
             }
 
