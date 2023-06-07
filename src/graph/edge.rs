@@ -1,4 +1,4 @@
-use super::{vertex::Vertex, property::Property};
+use super::vertex::Vertex;
 
 #[derive(Debug)]
 pub struct Edge<'a> {
