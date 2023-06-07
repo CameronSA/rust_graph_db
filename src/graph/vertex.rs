@@ -7,8 +7,6 @@ use super::property::{Property, PropertyValue};
 #[derive(Debug, Clone)]
 pub struct Vertex {
     pub label: String,
-
-    // TODO: Enforce that property names are unique
     pub properties: Vec<Property>,
 }
 
