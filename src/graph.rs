@@ -4,7 +4,7 @@ pub mod vertex;
 
 use crate::executor::VertexFilterCommandType;
 
-use self::{property::PropertyValue, vertex::Vertex};
+use self::{property::PropertyValue, vertex::Vertex, edge::Edge};
 
 #[derive(Debug)]
 pub enum GraphType {
@@ -17,6 +17,7 @@ pub enum DataResult<'a> {
     StringVector(Vec<&'a str>),
     VertexIndexVector(Vec<usize>),
     VertexRef(&'a Vertex),
+    EdgeRef(&'a Edge),
     MutableVertexRef(&'a mut Vertex),
     VertexValueVector(Vec<Option<&'a PropertyValue>>),
 }
