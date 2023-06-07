@@ -2,34 +2,18 @@ use std::str::FromStr;
 
 use crate::graph::DataResult;
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum VertexPropertyValue {
-    Boolean(bool),
-    Int32(i32),
-    Int64(i64),
-    Float32(f32),
-    Float64(f64),
-    String(String),
-    DateTime(i64), // milliseconds since January 1, 1970
-}
-
-#[derive(Debug, Clone)]
-pub struct VertexProperty {
-    pub name: String,
-    pub value: VertexPropertyValue,
-    pub flagged_for_removal: bool,
-}
+use super::property::{Property, PropertyValue};
 
 #[derive(Debug, Clone)]
 pub struct Vertex {
     pub label: String,
 
     // TODO: Enforce that property names are unique
-    pub properties: Vec<VertexProperty>,
+    pub properties: Vec<Property>,
 }
 
 impl Vertex {
-    pub fn update(&mut self, properties: Vec<VertexProperty>) -> Result<DataResult, String> {
+    pub fn update(&mut self, properties: Vec<Property>) -> Result<DataResult, String> {
         if self.properties.len() < 1 {
             self.properties = properties;
             return Ok(DataResult::VertexRef(self));
@@ -45,13 +29,13 @@ impl Vertex {
                 Some(index) => match property.flagged_for_removal {
                     true => property_indices_to_remove.push(index),
                     false => self.properties[index] = property,
-                } 
+                },
                 None => self.properties.push(property),
             }
         }
 
         // sort by descending
-        property_indices_to_remove.sort_by(|a,b| b.cmp(a));
+        property_indices_to_remove.sort_by(|a, b| b.cmp(a));
 
         for index in property_indices_to_remove {
             self.properties.remove(index);
@@ -74,15 +58,15 @@ impl Vertex {
         for property in &self.properties {
             if property.name == name {
                 let is_match = match &property.value {
-                    VertexPropertyValue::Boolean(val) => compare_to_string(*val, value),
-                    VertexPropertyValue::Int32(val) => compare_to_string(*val, value),
-                    VertexPropertyValue::Int64(val) => compare_to_string(*val, value),
-                    VertexPropertyValue::Float32(val) => compare_to_string(*val, value),
-                    VertexPropertyValue::Float64(val) => compare_to_string(*val, value),
-                    VertexPropertyValue::String(val) => val == value.trim(),
+                    PropertyValue::Boolean(val) => compare_to_string(*val, value),
+                    PropertyValue::Int32(val) => compare_to_string(*val, value),
+                    PropertyValue::Int64(val) => compare_to_string(*val, value),
+                    PropertyValue::Float32(val) => compare_to_string(*val, value),
+                    PropertyValue::Float64(val) => compare_to_string(*val, value),
+                    PropertyValue::String(val) => val == value.trim(),
 
                     // TODO: This isn't that practical unless searching for a specific epoch
-                    VertexPropertyValue::DateTime(val) => compare_to_string(*val, value),
+                    PropertyValue::DateTime(val) => compare_to_string(*val, value),
                 };
 
                 match is_match {
@@ -101,7 +85,7 @@ impl Vertex {
             .properties
             .iter()
             .filter(|property| match property.value {
-                VertexPropertyValue::String(_) => true,
+                PropertyValue::String(_) => true,
                 _ => false,
             })
             .collect::<Vec<_>>();
@@ -109,7 +93,7 @@ impl Vertex {
         for property in string_properties {
             if property.name == name {
                 let is_match = match &property.value {
-                    VertexPropertyValue::String(val) => val.contains(search_term.trim()),
+                    PropertyValue::String(val) => val.contains(search_term.trim()),
                     _ => false,
                 };
 
@@ -123,7 +107,7 @@ impl Vertex {
         false
     }
 
-    pub fn get_property_value(&self, name: &str) -> Option<&VertexPropertyValue> {
+    pub fn get_property_value(&self, name: &str) -> Option<&PropertyValue> {
         for property in &self.properties {
             if property.name == name {
                 return Some(&property.value);
@@ -150,10 +134,7 @@ where
     }
 }
 
-fn get_first_property_index_by_name<'a>(
-    properties: &Vec<VertexProperty>,
-    name: &str,
-) -> Option<usize> {
+fn get_first_property_index_by_name<'a>(properties: &Vec<Property>, name: &str) -> Option<usize> {
     for i in 0..properties.len() {
         if properties[i].name == name {
             return Some(i);

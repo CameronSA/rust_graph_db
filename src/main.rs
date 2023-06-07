@@ -1,13 +1,13 @@
 mod executor;
 mod graph;
 mod parser;
-mod vertex;
 
 use std::io::{stdin, stdout, Write};
 
 use crate::{
-    executor::{Executor, help},
-    graph::{GraphFactory, GraphType}, parser::parse,
+    executor::{help, Executor},
+    graph::{GraphFactory, GraphType},
+    parser::parse,
 };
 
 fn main() {
@@ -30,12 +30,12 @@ fn main() {
                 continue;
             }
         };
-        
+
         let result = executor.execute(command);
 
         match result {
             Ok(result) => println!("{:?}", result),
-            Err(err) => println!("{}", err)
+            Err(err) => println!("{}", err),
         }
     }
 }

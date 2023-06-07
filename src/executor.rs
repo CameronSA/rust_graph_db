@@ -1,24 +1,27 @@
 use json::JsonValue as Json;
 
 use crate::{
-    graph::{DataResult, Graph, GraphFactory, GraphType},
+    graph::{
+        property::{Property, PropertyValue},
+        vertex::Vertex,
+        DataResult, Graph, GraphFactory, GraphType,
+    },
     parser::JsonProperty,
-    vertex::{Vertex, VertexProperty, VertexPropertyValue},
 };
 
 #[derive(Debug)]
 pub enum VertexMutationCommandType {
-    Property(VertexProperty),
+    Property(Property),
     RemoveProperty(String),
 }
 
 #[derive(Debug)]
 pub enum VertexFilterCommandType {
     HasName(String),
-    HasProperty(String), // name
+    HasProperty(String),              // name
     HasPropertyValue(String, String), // name, value pair
-    HasPropertyLike(String, String), // name, search term pair
-    Values(String), // property name
+    HasPropertyLike(String, String),  // name, search term pair
+    Values(String),                   // property name
 }
 
 #[derive(Debug)]
@@ -183,21 +186,21 @@ fn create_vertex(
 
 fn update_vertex_properties(
     mutate_command: &Vec<VertexMutationCommandType>,
-) -> Result<Vec<VertexProperty>, String> {
+) -> Result<Vec<Property>, String> {
     let mut properties = Vec::new();
     for command in mutate_command {
         match command {
             VertexMutationCommandType::Property(property) => {
-                properties.push(VertexProperty {
+                properties.push(Property {
                     name: property.name.clone(),
                     value: property.value.clone(),
                     flagged_for_removal: false,
                 });
             }
             VertexMutationCommandType::RemoveProperty(property_name) => {
-                properties.push(VertexProperty{
+                properties.push(Property {
                     name: property_name.clone(),
-                    value: VertexPropertyValue::Int32(0),
+                    value: PropertyValue::Int32(0),
                     flagged_for_removal: true,
                 });
             }

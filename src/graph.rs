@@ -1,7 +1,10 @@
-use crate::{
-    executor::VertexFilterCommandType,
-    vertex::{Vertex, VertexPropertyValue},
-};
+pub mod edge;
+pub mod property;
+pub mod vertex;
+
+use crate::executor::VertexFilterCommandType;
+
+use self::{property::PropertyValue, vertex::Vertex};
 
 #[derive(Debug)]
 pub enum GraphType {
@@ -15,7 +18,7 @@ pub enum DataResult<'a> {
     VertexIndexVector(Vec<usize>),
     VertexRef(&'a Vertex),
     MutableVertexRef(&'a mut Vertex),
-    VertexValueVector(Vec<Option<&'a VertexPropertyValue>>),
+    VertexValueVector(Vec<Option<&'a PropertyValue>>),
 }
 
 pub trait Graph {
@@ -68,7 +71,8 @@ impl Graph for InMemoryGraph {
                     vertex_indices.retain(|index| self.vertices[*index].has_property(name));
                 }
                 VertexFilterCommandType::HasPropertyValue(name, value) => {
-                    vertex_indices.retain(|index| self.vertices[*index].has_property_value(name, value));
+                    vertex_indices
+                        .retain(|index| self.vertices[*index].has_property_value(name, value));
                 }
                 VertexFilterCommandType::HasPropertyLike(name, search_term) => {
                     vertex_indices
