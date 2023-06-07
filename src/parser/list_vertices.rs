@@ -26,7 +26,7 @@ pub fn parse_list_vertices_commands(
 
             _ if command.starts_with(HAS_PROPERTY_KEY) && command.ends_with(END_COMMAND_KEY) => {
                 let name = extract_string(HAS_PROPERTY_KEY, command)?;
-                vertex_filter_commands.push(VertexFilterCommandType::HasName(name));
+                vertex_filter_commands.push(VertexFilterCommandType::HasProperty(name));
             }
 
             _ if command.starts_with(HAS_PROPERTY_VALUE_KEY)
