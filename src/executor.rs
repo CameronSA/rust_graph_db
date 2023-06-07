@@ -16,6 +16,7 @@ pub enum VertexFilterCommandType {
     HasName(String),
     HasProperty(String, String), // name, value pair
     HasPropertyLike(String, String), // name, search term pair
+    Values(String), // property name
 }
 
 #[derive(Debug)]

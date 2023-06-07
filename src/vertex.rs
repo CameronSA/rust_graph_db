@@ -12,13 +12,13 @@ pub enum VertexPropertyValue {
     DateTime(i64), // milliseconds since January 1, 1970
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct VertexProperty {
     pub name: String,
     pub value: VertexPropertyValue,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Vertex {
     pub label: String,
 
@@ -82,6 +82,16 @@ impl Vertex {
         }
 
         false
+    }
+
+    pub fn get_property_value(&self, name: &str) -> Option<&VertexPropertyValue> {
+        for property in &self.properties{
+            if property.name == name{
+                return Some(&property.value);
+            }
+        }
+
+        None
     }
 }
 

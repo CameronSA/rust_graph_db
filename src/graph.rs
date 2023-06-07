@@ -1,4 +1,4 @@
-use crate::{executor::VertexFilterCommandType, vertex::Vertex};
+use crate::{executor::VertexFilterCommandType, vertex::{Vertex, VertexPropertyValue}};
 
 #[derive(Debug)]
 pub enum GraphType {
@@ -9,9 +9,10 @@ pub enum GraphType {
 pub enum DataResult<'a> {
     UnsignedInt(usize),
     StringVector(Vec<&'a str>),
-    VertexVectorRefs(&'a Vec<Vertex>),
+    VertexIndexVector(Vec<usize>),
     VertexRef(&'a Vertex),
     MutableVertexRef(&'a mut Vertex),
+    VertexValueVector(Vec<Option<&'a VertexPropertyValue>>)
 }
 
 pub trait Graph {
@@ -41,17 +42,20 @@ impl Graph for InMemoryGraph {
 
     fn list_vertices(&self, filters: &Vec<VertexFilterCommandType>) -> Result<DataResult, String> {
         // TODO: Could have some optimisations here around selecting the order of filter applications
-
-        if self.vertices.len() < 1 {
-            return Ok(DataResult::VertexVectorRefs(&self.vertices));
-        }
-
         let mut vertex_indices = self
             .vertices
             .iter()
             .enumerate()
             .map(|(index, _)| index)
             .collect::<Vec<_>>();
+
+        if self.vertices.len() < 1 {
+            return Ok(DataResult::VertexIndexVector(vertex_indices));
+        }
+
+        let mut vertex_value_vector = Vec::new();
+
+        let mut return_values = false;
         for filter in filters {
             match filter {
                 VertexFilterCommandType::HasName(name) => {
@@ -64,10 +68,19 @@ impl Graph for InMemoryGraph {
                     vertex_indices
                         .retain(|index| self.vertices[*index].has_property_like(name, search_term));
                 }
+                VertexFilterCommandType::Values(name) => {
+                    for index in &vertex_indices{
+                        let value = self.vertices[*index].get_property_value(name);
+                        vertex_value_vector.push(value);
+                    }
+                }
             }
         }
 
-        todo!()
+        match return_values {
+            true => Ok(DataResult::VertexIndexVector(vertex_indices)),
+            false => Ok(DataResult::VertexValueVector(vertex_value_vector)),
+        }
     }
 
     fn get_vertex(&self, id: usize) -> Result<DataResult, String> {
