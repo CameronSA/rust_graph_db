@@ -1,4 +1,8 @@
-use super::{property::Property, vertex::Vertex, DataResult};
+use super::{
+    property::{Property, PropertyValue},
+    vertex::Vertex,
+    DataResult,
+};
 
 #[derive(Debug)]
 pub struct Edge {
@@ -24,5 +28,21 @@ impl Edge {
             },
             None => Ok(DataResult::EdgeRef(self)),
         }
+    }
+
+    pub fn has_property(&self, name: &str) -> bool {
+        self.edge_vertex.has_property(name)
+    }
+
+    pub fn has_property_value(&self, name: &str, value: &str) -> bool {
+        self.edge_vertex.has_property_value(name, value)
+    }
+
+    pub fn has_property_like(&self, name: &str, search_term: &str) -> bool {
+        self.edge_vertex.has_property_like(name, search_term)
+    }
+
+    pub fn get_property_value(&self, name: &str) -> Option<&PropertyValue> {
+        self.edge_vertex.get_property_value(name)
     }
 }
