@@ -72,7 +72,7 @@ impl Executor {
 
             CommandType::GetVertex(id) => {
                 let graph = self.get_graph(&command)?;
-                graph.get_vertex(*id)
+                graph.get_vertex(id)
             }
 
             CommandType::AddVertex(label, mutate_command) => {
@@ -83,7 +83,7 @@ impl Executor {
 
             CommandType::EditVertex(id, mutate_command) => {
                 let graph = self.get_mut_graph(&command)?;
-                let get_vertex_result = graph.get_mutable_vertex(*id)?;
+                let get_vertex_result = graph.get_mutable_vertex(id)?;
                 let vertex = match get_vertex_result {
                     DataResult::MutableVertexRef(vertex) => vertex,
                     _ => return Err(format!("Mismatched return type")),
@@ -96,7 +96,7 @@ impl Executor {
 
             CommandType::RemoveVertex(id) => {
                 let graph = self.get_mut_graph(&command)?;
-                graph.remove_vertex(*id)
+                graph.remove_vertex(id)
             }
 
             CommandType::Help => Err(help()),

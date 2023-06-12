@@ -1,10 +1,13 @@
 pub mod edge;
+mod entity_map;
 pub mod property;
 pub mod vertex;
 
+use std::iter::Map;
+
 use crate::executor::VertexFilterCommandType;
 
-use self::{property::PropertyValue, vertex::Vertex, edge::Edge};
+use self::{edge::Edge, entity_map::EntityMap, property::PropertyValue, vertex::Vertex};
 
 #[derive(Debug)]
 pub enum GraphType {
@@ -15,7 +18,7 @@ pub enum GraphType {
 pub enum DataResult<'a> {
     UnsignedInt(usize),
     StringVector(Vec<&'a str>),
-    VertexIndexVector(Vec<usize>),
+    VertexIndexVector(Vec<&'a usize>),
     VertexRef(&'a Vertex),
     EdgeRef(&'a Edge),
     MutableVertexRef(&'a mut Vertex),
@@ -25,38 +28,38 @@ pub enum DataResult<'a> {
 pub trait Graph {
     fn name(&self) -> &str;
 
-    fn vertices(&self) -> &Vec<Vertex>;
-
     fn add_vertex(&mut self, vertex: Vertex) -> Result<DataResult, String>;
 
-    fn get_vertex(&self, id: usize) -> Result<DataResult, String>;
+    fn add_edge(&mut self, edge: Edge) -> Result<DataResult, String>;
 
-    fn remove_vertex(&mut self, id: usize) -> Result<DataResult, String>;
+    fn get_vertex(&self, id: &usize) -> Result<DataResult, String>;
 
-    fn get_mutable_vertex(&mut self, id: usize) -> Result<DataResult, String>;
+    fn remove_vertex(&mut self, id: &usize) -> Result<DataResult, String>;
+
+    fn get_mutable_vertex(&mut self, id: &usize) -> Result<DataResult, String>;
 
     fn list_vertices(&self, filters: &Vec<VertexFilterCommandType>) -> Result<DataResult, String>;
 }
 
 struct InMemoryGraph {
     name: String,
-    vertices: Vec<Vertex>,
+    vertices: EntityMap<Vertex>,
+    edges: EntityMap<Edge>,
 }
 
 impl Graph for InMemoryGraph {
     fn add_vertex(&mut self, vertex: Vertex) -> Result<DataResult, String> {
-        self.vertices.push(vertex);
-        Ok(DataResult::UnsignedInt(self.vertices.len() - 1))
+        let index = self.vertices.push(vertex);
+        Ok(DataResult::UnsignedInt(index))
+    }
+
+    fn add_edge(&mut self, edge: Edge) -> Result<DataResult, String> {
+        todo!()
     }
 
     fn list_vertices(&self, filters: &Vec<VertexFilterCommandType>) -> Result<DataResult, String> {
         // TODO: Could have some optimisations here around selecting the order of filter applications
-        let mut vertex_indices = self
-            .vertices
-            .iter()
-            .enumerate()
-            .map(|(index, _)| index)
-            .collect::<Vec<_>>();
+        let mut vertex_indices = self.vertices.get_indices();
 
         if self.vertices.len() < 1 {
             return Ok(DataResult::VertexIndexVector(vertex_indices));
@@ -68,22 +71,35 @@ impl Graph for InMemoryGraph {
         for filter in filters {
             match filter {
                 VertexFilterCommandType::HasName(name) => {
-                    vertex_indices.retain(|index| &self.vertices[*index].label == name);
+                    vertex_indices.retain(|index| match self.vertices.get(index) {
+                        Some(val) => &val.label == name,
+                        None => false,
+                    });
                 }
                 VertexFilterCommandType::HasProperty(name) => {
-                    vertex_indices.retain(|index| self.vertices[*index].has_property(name));
+                    vertex_indices.retain(|index| match self.vertices.get(index) {
+                        Some(val) => val.has_property(name),
+                        None => false,
+                    });
                 }
                 VertexFilterCommandType::HasPropertyValue(name, value) => {
-                    vertex_indices
-                        .retain(|index| self.vertices[*index].has_property_value(name, value));
+                    vertex_indices.retain(|index| match self.vertices.get(index) {
+                        Some(val) => val.has_property_value(name, value),
+                        None => false,
+                    });
                 }
                 VertexFilterCommandType::HasPropertyLike(name, search_term) => {
-                    vertex_indices
-                        .retain(|index| self.vertices[*index].has_property_like(name, search_term));
+                    vertex_indices.retain(|index| match self.vertices.get(index) {
+                        Some(val) => val.has_property_like(name, search_term),
+                        None => false,
+                    });
                 }
                 VertexFilterCommandType::Values(name) => {
                     for index in &vertex_indices {
-                        let value = self.vertices[*index].get_property_value(name);
+                        let value = match self.vertices.get(index) {
+                            Some(val) => val.get_property_value(name),
+                            None => None,
+                        };
                         vertex_value_vector.push(value);
                         return_values = true;
                     }
@@ -97,48 +113,41 @@ impl Graph for InMemoryGraph {
         }
     }
 
-    fn get_vertex(&self, id: usize) -> Result<DataResult, String> {
-        if self.vertices.len() == 0 || self.vertices.len() - 1 < id {
-            Err(format!("Vertex ID: {} does not exist", id))
-        } else {
-            Ok(DataResult::VertexRef(&self.vertices[id]))
-        }
-    }
-    
-    fn remove_vertex(&mut self, id: usize) -> Result<DataResult, String> {
-        if self.vertices.len() == 0 || self.vertices.len() -1 < id {
-            Err(format!("Vertex ID: {} does not exist", id))
-        } else {
-            // TODO: Need a better way to grant vertex IDs without using the vector index because this will change vertex IDs and break edges
-            self.vertices.remove(id);
-            Ok(DataResult::UnsignedInt(id))
+    fn get_vertex(&self, id: &usize) -> Result<DataResult, String> {
+        match self.vertices.get(id) {
+            Some(val) => Ok(DataResult::VertexRef(val)),
+            None => Err(format!("Vertex ID: {} does not exist", id)),
         }
     }
 
-    fn get_mutable_vertex(&mut self, id: usize) -> Result<DataResult, String> {
-        if self.vertices.len() == 0 || self.vertices.len() - 1 < id {
-            Err(format!("Vertex ID: {} does not exist", id))
-        } else {
-            Ok(DataResult::MutableVertexRef(&mut self.vertices[id]))
+    fn remove_vertex(&mut self, id: &usize) -> Result<DataResult, String> {
+        match self.vertices.remove(id) {
+            Some(_) => Ok(DataResult::UnsignedInt(*id)),
+            None => Err(format!("Vertex ID: {} does not exist", id)),
+        }
+    }
+
+    fn get_mutable_vertex(&mut self, id: &usize) -> Result<DataResult, String> {
+        match self.vertices.get_mut(id) {
+            Some(val) => Ok(DataResult::MutableVertexRef(val)),
+            None => Err(format!("Vertex ID: {} does not exist", id)),
         }
     }
 
     fn name(&self) -> &str {
         &self.name
     }
-
-    fn vertices(&self) -> &Vec<Vertex> {
-        &self.vertices
-    }
 }
 
 pub struct GraphFactory {
-    pub graphs: Vec<Box<dyn Graph>>,
+    pub graphs: EntityMap<Box<dyn Graph>>,
 }
 
 impl GraphFactory {
     pub fn new() -> GraphFactory {
-        GraphFactory { graphs: vec![] }
+        GraphFactory {
+            graphs: EntityMap::new(),
+        }
     }
 
     pub fn create_graph(
@@ -150,7 +159,7 @@ impl GraphFactory {
             return Err(format!("Must provide a graph name"));
         }
 
-        for graph in &self.graphs {
+        for (_, graph) in self.graphs.entities() {
             if graph.name() == graph_name {
                 return Err(format!("Graph with name '{}' already exists", graph.name()));
             }
@@ -160,17 +169,18 @@ impl GraphFactory {
             GraphType::InMemory => {
                 let graph = Box::new(InMemoryGraph {
                     name: graph_name,
-                    vertices: Vec::new(),
+                    vertices: EntityMap::new(),
+                    edges: EntityMap::new(),
                 });
-                self.graphs.push(graph);
-                Ok(DataResult::UnsignedInt(self.graphs.len() - 1))
+                let index = self.graphs.push(graph);
+                Ok(DataResult::UnsignedInt(index))
             }
         }
     }
 
     pub fn list_graphs(&self) -> Result<DataResult, String> {
-        let mut graphs = vec![];
-        for graph in &self.graphs {
+        let mut graphs = Vec::new();
+        for (_, graph) in self.graphs.entities() {
             graphs.push(graph.name());
         }
 
@@ -179,7 +189,7 @@ impl GraphFactory {
 
     pub fn get_graph(&mut self, graph_name: &str) -> Result<&mut Box<dyn Graph>, String> {
         let mut graph_ref: Option<&mut Box<dyn Graph>> = None;
-        for graph in &mut self.graphs {
+        for (_, graph) in self.graphs.entities_mut() {
             if (*graph).name() == graph_name {
                 graph_ref = Some(graph);
                 break;
