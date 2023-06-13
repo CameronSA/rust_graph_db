@@ -1,11 +1,11 @@
 mod list_vertices;
 mod mutate_vertex;
 
-use crate::executor::{Command, CommandType};
+use crate::executor::{Command, CommandType, EdgeMutationCommandType};
 use json::object as JsonObject;
 
 use self::{
-    list_vertices::parse_list_vertices_commands, mutate_vertex::parse_vertex_mutation_commmands,
+    list_vertices::parse_list_vertices_commands, mutate_vertex::parse_entity_mutation_commmands,
 };
 
 const HELP_KEY: &str = "help";
@@ -15,9 +15,8 @@ const LIST_VERTICES_KEY: &str = "V()";
 const GET_VERTEX_KEY: &str = "V(";
 const ADD_VERTEX_KEY: &str = "addV(";
 const EDIT_VERTEX_KEY: &str = "editV(";
-const EDIT_VERTEX_EMPTY_KEY: &str = "editV()";
 const DELETE_VERTEX_KEY: &str = "deleteV(";
-const DELETE_VERTEX_EMPTY_KEY: &str = "deleteV()";
+const ADD_EDGE_KEY: &str = "addE(";
 const PROPERTY_KEY: &str = "property(";
 const REMOVE_PROPERTY_KEY: &str = "removeProperty(";
 const HAS_LABEL_KEY: &str = "hasLabel(";
@@ -131,6 +130,13 @@ pub fn parse(command: String) -> Result<Command, String> {
                 }),
             }),
 
+            CommandType::AddEdge(mutation_command) => Ok(Command {
+                command_type: CommandType::AddEdge(mutation_command),
+                command_json: Some(JsonObject! {
+                    graph_name: identify_graph(&command_components)
+                }),
+            }),
+
             CommandType::Help => Ok(Command {
                 command_type: CommandType::Help,
                 command_json: None,
@@ -171,7 +177,6 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
         }
 
         // Vertex mutation
-        EDIT_VERTEX_EMPTY_KEY => Err(format!("Must provide a vertex ID")),
         _ if command.starts_with(EDIT_VERTEX_KEY) && command.ends_with(END_COMMAND_KEY) => {
             let vertex_id = extract_number(EDIT_VERTEX_KEY, command);
             match vertex_id {
@@ -181,13 +186,39 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
         }
 
         // Vertex deletion
-        DELETE_VERTEX_EMPTY_KEY => Err(format!("Must provide a vertex ID")),
         _ if command.starts_with(DELETE_VERTEX_KEY) && command.ends_with(END_COMMAND_KEY) => {
             let vertex_id = extract_number(DELETE_VERTEX_KEY, command);
             match vertex_id {
                 Ok(id) => Ok(CommandType::RemoveVertex(id)),
                 Err(err) => Err(err),
             }
+        }
+
+        // Edge addition
+        _ if command.starts_with(ADD_EDGE_KEY) && command.ends_with(END_COMMAND_KEY) => {
+            let edge_input = extract_string(ADD_EDGE_KEY, command)?;
+            let edge_parameters: Vec<&str> = edge_input.split(",").collect();
+            if edge_parameters.len() != 2 {
+                return Err(format!("Must provide from_id and to_id parameters"));
+            }
+
+            let from_id_str = edge_parameters[0].trim();
+            let to_id_str = edge_parameters[1].trim();
+
+            fn parse(str: &str) -> Result<usize, String> {
+                match str.parse::<usize>() {
+                    Ok(num) => Ok(num),
+                    Err(_) => Err(format!("Failed to parse value: '{str}' as int",)),
+                }
+            }
+
+            let from_id = parse(from_id_str)?;
+            let to_id = parse(to_id_str)?;
+
+            Ok(CommandType::AddEdge(vec![
+                EdgeMutationCommandType::FromVertex(from_id),
+                EdgeMutationCommandType::ToVertex(to_id),
+            ]))
         }
 
         // Catch all
@@ -201,12 +232,18 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
             command_type = CommandType::ListVertices(filter_commands);
         }
         CommandType::AddVertex(label, _) => {
-            let mutation_commands = parse_vertex_mutation_commmands(command_components)?;
+            let mutation_commands = parse_entity_mutation_commmands(command_components)?;
             command_type = CommandType::AddVertex(label, mutation_commands);
         }
         CommandType::EditVertex(id, _) => {
-            let mutation_commands = parse_vertex_mutation_commmands(command_components)?;
+            let mutation_commands = parse_entity_mutation_commmands(command_components)?;
             command_type = CommandType::EditVertex(id, mutation_commands);
+        }
+        CommandType::AddEdge(ref mut mutation_commands) => {
+            let vertex_commands = parse_entity_mutation_commmands(command_components)?;
+            mutation_commands.push(EdgeMutationCommandType::VertexMutationCommandTypes(
+                vertex_commands,
+            ));
         }
 
         _ => (),
@@ -220,8 +257,7 @@ fn extract_number(key: &str, command: &str) -> Result<usize, String> {
     match stripped_command.parse::<usize>() {
         Ok(num) => Ok(num),
         Err(_) => Err(format!(
-            "Failed to parse value: '{}' as int",
-            stripped_command
+            "Failed to parse value: '{stripped_command}' as int for {key}<value>)",
         )),
     }
 }

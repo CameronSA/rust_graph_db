@@ -3,8 +3,6 @@ mod entity_map;
 pub mod property;
 pub mod vertex;
 
-use std::iter::Map;
-
 use crate::executor::VertexFilterCommandType;
 
 use self::{edge::Edge, entity_map::EntityMap, property::PropertyValue, vertex::Vertex};
@@ -54,7 +52,8 @@ impl Graph for InMemoryGraph {
     }
 
     fn add_edge(&mut self, edge: Edge) -> Result<DataResult, String> {
-        todo!()
+        let index = self.edges.push(edge);
+        Ok(DataResult::UnsignedInt(index))
     }
 
     fn list_vertices(&self, filters: &Vec<VertexFilterCommandType>) -> Result<DataResult, String> {
@@ -121,6 +120,7 @@ impl Graph for InMemoryGraph {
     }
 
     fn remove_vertex(&mut self, id: &usize) -> Result<DataResult, String> {
+        // TODO: Delete any edges attached to the vertex
         match self.vertices.remove(id) {
             Some(_) => Ok(DataResult::UnsignedInt(*id)),
             None => Err(format!("Vertex ID: {} does not exist", id)),

@@ -2,6 +2,7 @@ use json::JsonValue as Json;
 
 use crate::{
     graph::{
+        edge::Edge,
         property::{Property, PropertyValue},
         vertex::Vertex,
         DataResult, Graph, GraphFactory, GraphType,
@@ -25,6 +26,13 @@ pub enum VertexFilterCommandType {
 }
 
 #[derive(Debug)]
+pub enum EdgeMutationCommandType {
+    VertexMutationCommandTypes(Vec<VertexMutationCommandType>),
+    FromVertex(usize),
+    ToVertex(usize),
+}
+
+#[derive(Debug)]
 pub enum CommandType {
     CreateGraph(String),
     ListGraphs,
@@ -33,6 +41,7 @@ pub enum CommandType {
     AddVertex(String, Vec<VertexMutationCommandType>),
     EditVertex(usize, Vec<VertexMutationCommandType>),
     RemoveVertex(usize),
+    AddEdge(Vec<EdgeMutationCommandType>),
     Help,
 }
 
@@ -77,7 +86,7 @@ impl Executor {
 
             CommandType::AddVertex(label, mutate_command) => {
                 let graph = self.get_mut_graph(&command)?;
-                let vertex = create_vertex(label.to_string(), &mutate_command)?;
+                let vertex = create_vertex(label.to_string(), mutate_command)?;
                 graph.add_vertex(vertex)
             }
 
@@ -97,6 +106,12 @@ impl Executor {
             CommandType::RemoveVertex(id) => {
                 let graph = self.get_mut_graph(&command)?;
                 graph.remove_vertex(id)
+            }
+
+            CommandType::AddEdge(mutate_command) => {
+                let graph = self.get_mut_graph(&command)?;
+                let edge = create_edge(graph, mutate_command)?;
+                graph.add_edge(edge)
             }
 
             CommandType::Help => Err(help()),
@@ -153,9 +168,11 @@ pub fn help() -> String {
 
         .deleteV(<id>): deletes the vertex with the given id
 
-    Vertex mutation commands (preceded with either addV() or editV(<id>))
+        .addE(<from_id>, <to_id>): adds an edge to the given graph between the given vertex ids
 
-        .property(<name>, <value>, <type>): adds a property to the given vertex
+    Vertex mutation commands (preceded with either addV(<label>), editV(<id>), or addE(<from_id>, <to_id>)))
+
+        .property(<name>, <value>, <type>): adds a property to the given vertex with the given vertex property type
 
         .removeProperty(<name>): removes the property with the given name
 
@@ -192,6 +209,58 @@ fn create_vertex(
     Ok(Vertex { label, properties })
 }
 
+fn create_edge(graph: &Box<dyn Graph>, mutate_command: &Vec<EdgeMutationCommandType>) -> Result<Edge, String> {
+    let mut properties = None;
+    let mut from_vertex = None;
+    let mut to_vertex = None;
+
+    for command in mutate_command {
+        match command {
+            EdgeMutationCommandType::VertexMutationCommandTypes(commands) => {
+                properties = Some(update_vertex_properties(commands)?);
+            }
+
+            EdgeMutationCommandType::FromVertex(id) => {
+                from_vertex = Some(id);
+            }
+
+            EdgeMutationCommandType::ToVertex(id) => {
+                to_vertex = Some(id);
+            }
+        }
+    }
+
+    let from_vertex_id = *match from_vertex {
+        Some(i) => i,
+        None => return Err(format!("Must provide a source vertex")),
+    };
+
+    let to_vertex_id = *match to_vertex {
+        Some(i) => i,
+        None => return Err(format!("Must provide a destination vertex")),
+    };
+
+    // Check vertices exist
+    _ = graph.get_vertex(&from_vertex_id)?;
+    _ = graph.get_vertex(&to_vertex_id)?;
+
+    let edge_vertex = Vertex {
+        label: format!("V[{}] -> V[{}]", from_vertex_id, to_vertex_id),
+        properties: match properties {
+            Some(props) => props,
+            None => Vec::new(),
+        },
+    };
+
+    Ok(Edge {
+        from_vertex_id,
+
+        to_vertex_id,
+
+        edge_vertex,
+    })
+}
+
 fn update_vertex_properties(
     mutate_command: &Vec<VertexMutationCommandType>,
 ) -> Result<Vec<Property>, String> {
@@ -201,7 +270,9 @@ fn update_vertex_properties(
         match command {
             VertexMutationCommandType::Property(property) => {
                 if added_names.contains(&property.name) {
-                    return Err(format!("Cannot have multiple properties with the same name"));
+                    return Err(format!(
+                        "Cannot have multiple properties with the same name"
+                    ));
                 }
 
                 added_names.push(property.name.to_owned());

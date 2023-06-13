@@ -4,10 +4,10 @@ use crate::{
     graph::property::{Property, PropertyValue},
 };
 
-pub fn parse_vertex_mutation_commmands(
+pub fn parse_entity_mutation_commmands(
     commands: &Vec<&str>,
 ) -> Result<Vec<VertexMutationCommandType>, String> {
-    // First command is graph, second is vertex. So, vertex mutations occur from the third command
+    // First command is graph, second is entity. So, entity mutations occur from the third command
     if commands.len() < 3 {
         return Ok(Vec::new());
     }

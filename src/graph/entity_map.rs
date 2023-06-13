@@ -16,13 +16,8 @@ impl<T> EntityMap<T> {
 
     pub fn push(&mut self, entity: T) -> usize {
         let mut index = 0;
-        {
-            match self.entities.keys().max() {
-                Some(i) => {
-                    index = *i + 1;
-                }
-                None => (),
-            }
+        if let Some(i) = self.entities.keys().max() {
+            index = *i + 1;
         }
 
         self.entities.insert(index, entity);
