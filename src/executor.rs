@@ -41,7 +41,7 @@ pub enum CommandType {
     AddVertex(String, Vec<VertexMutationCommandType>),
     EditVertex(usize, Vec<VertexMutationCommandType>),
     RemoveVertex(usize),
-    AddEdge(Vec<EdgeMutationCommandType>),
+    AddEdge(String, Vec<EdgeMutationCommandType>),
     Help,
 }
 
@@ -108,9 +108,9 @@ impl Executor {
                 graph.remove_vertex(id)
             }
 
-            CommandType::AddEdge(mutate_command) => {
+            CommandType::AddEdge(label, mutate_command) => {
                 let graph = self.get_mut_graph(&command)?;
-                let edge = create_edge(graph, mutate_command)?;
+                let edge = create_edge(graph, mutate_command, label.to_string())?;
                 graph.add_edge(edge)
             }
 
@@ -168,9 +168,9 @@ pub fn help() -> String {
 
         .deleteV(<id>): deletes the vertex with the given id
 
-        .addE(<from_id>, <to_id>): adds an edge to the given graph between the given vertex ids
+        .addE(<label>, <from_id>, <to_id>): adds an edge to the given graph between the given vertex ids
 
-    Vertex mutation commands (preceded with either addV(<label>), editV(<id>), or addE(<from_id>, <to_id>)))
+    Vertex mutation commands (preceded with either addV(<label>), editV(<id>), or addE(<label>, <from_id>, <to_id>)))
 
         .property(<name>, <value>, <type>): adds a property to the given vertex with the given vertex property type
 
@@ -209,7 +209,7 @@ fn create_vertex(
     Ok(Vertex { label, properties })
 }
 
-fn create_edge(graph: &Box<dyn Graph>, mutate_command: &Vec<EdgeMutationCommandType>) -> Result<Edge, String> {
+fn create_edge(graph: &Box<dyn Graph>, mutate_command: &Vec<EdgeMutationCommandType>, label: String) -> Result<Edge, String> {
     let mut properties = None;
     let mut from_vertex = None;
     let mut to_vertex = None;
@@ -245,7 +245,7 @@ fn create_edge(graph: &Box<dyn Graph>, mutate_command: &Vec<EdgeMutationCommandT
     _ = graph.get_vertex(&to_vertex_id)?;
 
     let edge_vertex = Vertex {
-        label: format!("V[{}] -> V[{}]", from_vertex_id, to_vertex_id),
+        label: label,
         properties: match properties {
             Some(props) => props,
             None => Vec::new(),

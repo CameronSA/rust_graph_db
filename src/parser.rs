@@ -130,8 +130,8 @@ pub fn parse(command: String) -> Result<Command, String> {
                 }),
             }),
 
-            CommandType::AddEdge(mutation_command) => Ok(Command {
-                command_type: CommandType::AddEdge(mutation_command),
+            CommandType::AddEdge(label, mutation_command) => Ok(Command {
+                command_type: CommandType::AddEdge(label, mutation_command),
                 command_json: Some(JsonObject! {
                     graph_name: identify_graph(&command_components)
                 }),
@@ -198,12 +198,13 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
         _ if command.starts_with(ADD_EDGE_KEY) && command.ends_with(END_COMMAND_KEY) => {
             let edge_input = extract_string(ADD_EDGE_KEY, command)?;
             let edge_parameters: Vec<&str> = edge_input.split(",").collect();
-            if edge_parameters.len() != 2 {
-                return Err(format!("Must provide from_id and to_id parameters"));
+            if edge_parameters.len() != 3 {
+                return Err(format!("Must provide label, from_id and to_id parameters"));
             }
 
-            let from_id_str = edge_parameters[0].trim();
-            let to_id_str = edge_parameters[1].trim();
+            let label = edge_parameters[0].trim();
+            let from_id_str = edge_parameters[1].trim();
+            let to_id_str = edge_parameters[2].trim();
 
             fn parse(str: &str) -> Result<usize, String> {
                 match str.parse::<usize>() {
@@ -215,10 +216,13 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
             let from_id = parse(from_id_str)?;
             let to_id = parse(to_id_str)?;
 
-            Ok(CommandType::AddEdge(vec![
-                EdgeMutationCommandType::FromVertex(from_id),
-                EdgeMutationCommandType::ToVertex(to_id),
-            ]))
+            Ok(CommandType::AddEdge(
+                label.to_owned(),
+                vec![
+                    EdgeMutationCommandType::FromVertex(from_id),
+                    EdgeMutationCommandType::ToVertex(to_id),
+                ],
+            ))
         }
 
         // Catch all
@@ -239,7 +243,7 @@ fn get_command_type(command_components: &Vec<&str>) -> Result<CommandType, Strin
             let mutation_commands = parse_entity_mutation_commmands(command_components)?;
             command_type = CommandType::EditVertex(id, mutation_commands);
         }
-        CommandType::AddEdge(ref mut mutation_commands) => {
+        CommandType::AddEdge(_, ref mut mutation_commands) => {
             let vertex_commands = parse_entity_mutation_commmands(command_components)?;
             mutation_commands.push(EdgeMutationCommandType::VertexMutationCommandTypes(
                 vertex_commands,
