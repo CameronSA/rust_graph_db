@@ -57,7 +57,6 @@ impl Graph for InMemoryGraph {
     }
 
     fn list_vertices(&self, filters: &Vec<VertexFilterCommandType>) -> Result<DataResult, String> {
-        // TODO: Could have some optimisations here around selecting the order of filter applications
         let mut vertex_indices = self.vertices.get_indices();
 
         if self.vertices.len() < 1 {
