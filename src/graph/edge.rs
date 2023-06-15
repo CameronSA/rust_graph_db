@@ -4,7 +4,7 @@ use super::{
     DataResult,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Edge {
     pub from_vertex_id: usize,
     pub to_vertex_id: usize,

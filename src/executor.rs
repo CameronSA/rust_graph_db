@@ -206,10 +206,15 @@ fn create_vertex(
     mutate_command: &Vec<VertexMutationCommandType>,
 ) -> Result<Vertex, String> {
     let properties = update_vertex_properties(mutate_command)?;
-    Ok(Vertex { label, properties })
+
+    Ok(Vertex::new(label, properties))
 }
 
-fn create_edge(graph: &Box<dyn Graph>, mutate_command: &Vec<EdgeMutationCommandType>, label: String) -> Result<Edge, String> {
+fn create_edge(
+    graph: &Box<dyn Graph>,
+    mutate_command: &Vec<EdgeMutationCommandType>,
+    label: String,
+) -> Result<Edge, String> {
     let mut properties = None;
     let mut from_vertex = None;
     let mut to_vertex = None;
@@ -244,13 +249,13 @@ fn create_edge(graph: &Box<dyn Graph>, mutate_command: &Vec<EdgeMutationCommandT
     _ = graph.get_vertex(&from_vertex_id)?;
     _ = graph.get_vertex(&to_vertex_id)?;
 
-    let edge_vertex = Vertex {
-        label: label,
-        properties: match properties {
+    let edge_vertex = Vertex::new(
+        label,
+        match properties {
             Some(props) => props,
             None => Vec::new(),
         },
-    };
+    );
 
     Ok(Edge {
         from_vertex_id,

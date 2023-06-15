@@ -8,9 +8,20 @@ use super::property::{Property, PropertyValue};
 pub struct Vertex {
     pub label: String,
     pub properties: Vec<Property>,
+    pub out_edge_ids: Vec<usize>,
+    pub in_edge_ids: Vec<usize>,
 }
 
 impl Vertex {
+    pub fn new(label: String, properties: Vec<Property>) -> Self {
+        Vertex {
+            label,
+            properties,
+            in_edge_ids: Vec::new(),
+            out_edge_ids: Vec::new(),
+        }
+    }
+
     pub fn update(&mut self, properties: Vec<Property>) -> Result<DataResult, String> {
         if self.properties.len() < 1 {
             self.properties = properties;

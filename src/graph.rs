@@ -52,7 +52,41 @@ impl Graph for InMemoryGraph {
     }
 
     fn add_edge(&mut self, edge: Edge) -> Result<DataResult, String> {
-        let index = self.edges.push(edge);
+        let index = self.edges.push(edge.clone());
+
+        // Find the vertices the edge is attached to and link them together based on the edge index
+        let panic_msg = "Unexpected return type whilst trying to get a mutable vertex";
+        if edge.from_vertex_id == edge.to_vertex_id {
+            match self.get_mutable_vertex(&edge.from_vertex_id)? {
+                DataResult::MutableVertexRef(vertex) => {
+                    vertex.in_edge_ids.push(index);
+                    vertex.out_edge_ids.push(index);
+                }
+                _ => panic!("{}", panic_msg),
+            }
+        } else {
+            {
+                let from_vertex = self.get_mutable_vertex(&edge.from_vertex_id)?;
+
+                match from_vertex {
+                    DataResult::MutableVertexRef(vertex) => {
+                        vertex.out_edge_ids.push(index);
+                    }
+                    _ => panic!("{}", panic_msg),
+                }
+            }
+            {
+                let to_vertex = self.get_mutable_vertex(&edge.to_vertex_id)?;
+
+                match to_vertex {
+                    DataResult::MutableVertexRef(vertex) => {
+                        vertex.in_edge_ids.push(index);
+                    }
+                    _ => panic!("{}", panic_msg),
+                }
+            }
+        }
+
         Ok(DataResult::UnsignedInt(index))
     }
 
